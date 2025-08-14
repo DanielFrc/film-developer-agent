@@ -107,3 +107,11 @@ cython_debug/
 venv/
 ENV/
 env/
+
+logs/
+data/
+
+.direnv
+*.toml
+.envrc
+
