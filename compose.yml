@@ -1,0 +1,14 @@
+services:
+  etl:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: film_dev_agent
+    environment:
+      - DATA_PATH=/data
+    volumes:
+      - ./local_s3:/data
+    command: python entrypoint.py
+
+volumes:
+  film_dev_data:

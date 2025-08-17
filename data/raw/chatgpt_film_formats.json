@@ -1,0 +1,38 @@
+[
+    {
+        "format": "35mm",
+        "description": "Small format film, 35mm wide, also known as 135 format. Commonly used in compact and SLR cameras."
+    },
+    {
+        "format": "120",
+        "description": "Medium format roll film, 6cm wide. Used in TLR, rangefinder, and SLR medium format cameras."
+    },
+    {
+        "format": "220",
+        "description": "Similar to 120 but twice the length and without backing paper. Medium format, now discontinued."
+    },
+    {
+        "format": "sheet",
+        "description": "Sheet film, also known as large format. Typically used in sizes like 4x5, 5x7, or 8x10 inches."
+    },
+    {
+        "format": "110",
+        "description": "Subminiature cartridge format, 16mm wide. Popular in pocket cameras in the 1970s and 1980s."
+    },
+    {
+        "format": "127",
+        "description": "Roll film between 35mm and 120 in size, 46mm wide. Used in vintage cameras like the Baby Rolleiflex."
+    },
+    {
+        "format": "APS",
+        "description": "Advanced Photo System. Compact 24mm-wide cartridge format, discontinued. Used in automatic point-and-shoot cameras."
+    },
+    {
+        "format": "Minox",
+        "description": "Ultra-small format (8x11mm), used in spy cameras like Minox. Considered subminiature."
+    },
+    {
+        "format": "disc",
+        "description": "Disc-shaped film introduced by Kodak in the 1980s. Very low resolution, now obsolete."
+    }
+]
