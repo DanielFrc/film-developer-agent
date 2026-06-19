@@ -14,6 +14,7 @@ class DataPaths:
     historical: Path
     manifests: Path
     normalized: Path
+    cache: Path
 
     @classmethod
     def from_base(cls, base: str | Path) -> "DataPaths":
@@ -25,6 +26,7 @@ class DataPaths:
             historical=root / "historical",
             manifests=root / "manifests",
             normalized=root / "normalized",
+            cache=root / "cache",
         )
 
     def ensure_all(self) -> None:
@@ -34,6 +36,7 @@ class DataPaths:
             self.historical,
             self.manifests,
             self.normalized,
+            self.cache,
         ):
             path.mkdir(parents=True, exist_ok=True)
 

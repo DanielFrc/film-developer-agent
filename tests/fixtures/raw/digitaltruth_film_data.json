@@ -12,6 +12,17 @@
     },
     {
         "film": "Ilford HP5 Plus",
+        "developer": "Rodinal",
+        "dilution": "1+25",
+        "iso": "400",
+        "35mm": "10",
+        "120": "11",
+        "sheet": null,
+        "temp": "20",
+        "notes": null
+    },
+    {
+        "film": "Ilford HP5 Plus",
         "developer": "ID-11",
         "dilution": "stock",
         "iso": "400",

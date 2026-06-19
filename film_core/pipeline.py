@@ -19,7 +19,7 @@ def _parquet_stats(path: str) -> dict[str, Any]:
     return {"exists": True, "record_count": len(df), "columns": list(df.columns)}
 
 
-def _collect_transform_outputs() -> dict[str, Any]:
+def _collect_process_outputs() -> dict[str, Any]:
     return {
         "formats": _parquet_stats(config.FORMAT_OUT),
         "developers": _parquet_stats(config.DEVELOPERS_OUT),
@@ -28,19 +28,32 @@ def _collect_transform_outputs() -> dict[str, Any]:
     }
 
 
-def run_pipeline(*, run_scrape: bool = True, run_transform: bool = True) -> PipelineManifest:
+def _collect_normalize_outputs() -> dict[str, Any]:
+    return {
+        "formats": _parquet_stats(config.GOLD_FORMAT_OUT),
+        "developers": _parquet_stats(config.GOLD_DEVELOPERS_OUT),
+        "films": _parquet_stats(config.GOLD_FILMS_OUT),
+        "developing_times": _parquet_stats(config.GOLD_DEVELOPING_TIMES_OUT),
+    }
+
+
+def run_pipeline(
+    *,
+    run_scrape: bool = True,
+    run_process: bool = True,
+    run_normalize: bool = True,
+) -> PipelineManifest:
     """
     Execute pipeline stages and persist a run manifest under data/manifests/.
 
-    Args:
-        run_scrape: When True, run the DigitalTruth scraper stage.
-        run_transform: When True, run the transformer stage.
-
-    Returns:
-        Completed PipelineManifest for the run.
+    Stages:
+        scrape   -> bronze JSON in data/raw/
+        process  -> silver parquet in data/processed/
+        normalize -> gold parquet in data/normalized/
     """
+    from digitaltruth_normalizer.normalizer_job import run_normalizer
+    from digitaltruth_processor.processor_job import run_processor
     from digitaltruth_scrapper.digitaltruth_scrapper_job import run_scrapper
-    from digitaltruth_transformer.digitaltruth_transformer_job import run_transformer
 
     paths = get_data_paths()
     paths.ensure_all()
@@ -58,14 +71,24 @@ def run_pipeline(*, run_scrape: bool = True, run_transform: bool = True) -> Pipe
                 manifest.finish_stage("scrape", status="failed", error=str(exc))
                 raise
 
-        if run_transform:
-            manifest.begin_stage("transform")
+        if run_process:
+            manifest.begin_stage("process")
             try:
-                run_transformer()
-                outputs = _collect_transform_outputs()
-                manifest.finish_stage("transform", status="success", outputs=outputs)
+                run_processor()
+                outputs = _collect_process_outputs()
+                manifest.finish_stage("process", status="success", outputs=outputs)
             except Exception as exc:
-                manifest.finish_stage("transform", status="failed", error=str(exc))
+                manifest.finish_stage("process", status="failed", error=str(exc))
+                raise
+
+        if run_normalize:
+            manifest.begin_stage("normalize")
+            try:
+                run_normalizer()
+                outputs = _collect_normalize_outputs()
+                manifest.finish_stage("normalize", status="success", outputs=outputs)
+            except Exception as exc:
+                manifest.finish_stage("normalize", status="failed", error=str(exc))
                 raise
 
         manifest.finish("success")
@@ -76,5 +99,7 @@ def run_pipeline(*, run_scrape: bool = True, run_transform: bool = True) -> Pipe
     finally:
         manifest.save()
 
-    logger.info("Pipeline run %s finished with status=%s", manifest.run_id, manifest.status)
+    logger.info(
+        "Pipeline run %s finished with status=%s", manifest.run_id, manifest.status
+    )
     return manifest

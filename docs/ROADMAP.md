@@ -206,6 +206,8 @@ film-agent recipe \
   --iso 400 \
   --dilution "1+50" \
   --output recipe.md
+
+film-agent recipe ... --force   # bypass cache, call LLM
 ```
 
 **Why CLI first:** Validates data model and LLM prompt without UI complexity. Same service layer powers API later.
@@ -223,15 +225,16 @@ film-agent recipe \
 | `/developers` | GET | List/search developers |
 | `/formats` | GET | List formats |
 | `/developing-times` | GET | Lookup by film + developer + format + iso |
-| `/recipes` | POST | Generate LLM recipe from lookup context |
+| `/recipes` | POST | Generate or return cached LLM recipe |
 
-**Recipe flow:**
+**Recipe flow (with cache):**
 
 ```mermaid
 sequenceDiagram
     participant User
     participant API
     participant Gold as Gold Parquet / DuckDB
+    participant Cache as Recipe cache SQLite
     participant LLM
 
     User->>API: POST /recipes {film, developer, format, iso}
@@ -239,16 +242,74 @@ sequenceDiagram
     alt No exact match
         API->>Gold: Fuzzy search + closest match
     end
-    API->>API: Build prompt from prompt.txt template
-    API->>LLM: Completion request
-    LLM-->>API: Recipe text
-    API-->>User: Recipe + source metadata + disclaimer
+    API->>API: Build cache_key from lookup + prompt_version + model
+    API->>Cache: Lookup by cache_key
+    alt Cache hit and source_hash valid
+        Cache-->>API: Cached recipe markdown
+        API-->>User: Recipe + cached=true + metadata
+    else Cache miss or force_regenerate
+        API->>API: Build prompt from prompt.txt template
+        API->>LLM: Completion request
+        LLM-->>API: Recipe text
+        API->>Cache: Store recipe + metadata
+        API-->>User: Recipe + cached=false + metadata
+    end
 ```
 
 **Prompt strategy:**
 - `prompt.txt` becomes a Jinja2 template with slots: `{film}`, `{developer}`, `{base_time}`, `{temperature}`, `{dilution}`, `{format}`, `{notes}`
 - System message: safety, no hallucinated times — base time must come from data
 - Include `source: DigitalTruth` and scrape date in response metadata
+
+#### Recipe cache
+
+Reduce LLM calls by storing generated recipes for exact lookup combinations. Separate from the gold catalog (facts) — this is **derived content**.
+
+| Aspect | Decision |
+|--------|----------|
+| **Storage** | SQLite at `data/cache/recipes.db` (gitignored) |
+| **Cache key** | Hash of `film`, `developer`, `format`, `iso`, `dilution`, `temperature`, `base_time`, `prompt_version`, `llm_provider`, `llm_model`, `language` |
+| **Invalidation** | New gold `source_hash` after pipeline run; `prompt_version` bump; optional TTL |
+| **Bypass** | `force_regenerate: true` on `POST /recipes` or CLI `--force` |
+| **AWS later** | Optional S3 prefix or DynamoDB only if multi-instance shared cache needed |
+
+**Schema (SQLite):**
+
+```sql
+CREATE TABLE recipe_cache (
+    cache_key       TEXT PRIMARY KEY,
+    film            TEXT NOT NULL,
+    developer       TEXT NOT NULL,
+    format          TEXT NOT NULL,
+    iso             TEXT NOT NULL,
+    dilution        TEXT NOT NULL,
+    temperature     TEXT,
+    base_time       TEXT NOT NULL,
+    recipe_markdown TEXT NOT NULL,
+    source_hash     TEXT NOT NULL,
+    prompt_version  TEXT NOT NULL,
+    llm_provider    TEXT NOT NULL,
+    llm_model       TEXT NOT NULL,
+    created_at      TEXT NOT NULL,
+    last_used_at    TEXT,
+    use_count       INTEGER DEFAULT 1
+);
+```
+
+**Response metadata example:**
+
+```json
+{
+  "recipe": "...",
+  "cached": true,
+  "cache_key": "...",
+  "source": "DigitalTruth",
+  "source_hash": "...",
+  "disclaimer": "Verify all times independently."
+}
+```
+
+**Package:** `film_llm/recipe_cache.py` — shared by API and CLI `film-agent recipe`.
 
 ---
 
@@ -308,7 +369,10 @@ film-developer-agent/
 ├── data/                              # Local only (gitignored outputs)
 │   ├── raw/                           # bronze
 │   ├── processed/                     # silver
-│   └── normalized/                    # gold
+│   ├── normalized/                    # gold
+│   ├── cache/                         # recipe cache SQLite (Phase 4)
+│   ├── historical/
+│   └── manifests/
 │
 ├── docs/
 │   ├── ARCHITECTURE.md
@@ -349,50 +413,56 @@ Migration can be **incremental** — no big-bang rewrite. Wrap existing modules 
 
 ---
 
-### Phase 2 — Silver / Gold Split (1–2 weeks)
+### Phase 2 — Silver / Gold Split ✅
 
-**Goal:** Separate processed parquet from normalized data (your item #3).
+**Goal:** Separate processed parquet from normalized data.
 
-| Task | Deliverable |
-|------|-------------|
-| Refactor transformer → **processor** (silver only) | Wide fact parquet, no melt |
-| Create **normalizer** (gold) | Melt, FKs, lookup view |
-| Update `entrypoint.py` | 3-stage pipeline |
-| Update `docs/ARCHITECTURE.md` | Medallion diagram |
+| Task | Deliverable | Status |
+|------|-------------|--------|
+| Refactor transformer → **processor** (silver only) | Wide fact parquet, no melt | Done |
+| Create **normalizer** (gold) | Melt, FKs, lookup view | Done |
+| Update `entrypoint.py` | 3-stage pipeline | Done |
+| Update `docs/ARCHITECTURE.md` | Medallion diagram | Done |
+| Gitignore `data/` outputs; format catalog in `catalogs/` | OSS-ready layout | Done |
 
 **Exit criteria:** `data/processed/` and `data/normalized/` are distinct; API can read from gold only.
 
 ---
 
-### Phase 3 — CLI + Query Layer (1–2 weeks)
+### Phase 3 — CLI + Query Layer ✅
 
 **Goal:** First user-facing tool (your item #5 — CLI first).
 
-| Task | Deliverable |
-|------|-------------|
-| `film_agent_cli` with Typer | Commands above |
-| DuckDB in-process queries over gold parquet | No DB server needed locally |
-| Fuzzy search (rapidfuzz) | `films search`, `developers search` |
-| Lookup command | Returns developing time + metadata |
+| Task | Deliverable | Status |
+|------|-------------|--------|
+| `film_agent_cli` with Typer | `film-agent` commands | Done |
+| DuckDB in-process queries over gold parquet | `film_core/query/gold_store.py` | Done |
+| Fuzzy search (rapidfuzz) | `films search`, `developers search` | Done |
+| Lookup command | `times lookup` — developing time + metadata | Done |
 
 **Exit criteria:** Generate a lookup result from CLI without running the scraper.
 
 ---
 
-### Phase 4 — API + LLM Recipes (2–3 weeks)
+### Phase 4 — API + LLM Recipes ✅
 
-**Goal:** Recipe generation via API (your items #4 and #5).
+**Goal:** Recipe generation via API (your items #4 and #5), with caching to minimize LLM cost and latency.
 
-| Task | Deliverable |
-|------|-------------|
-| FastAPI app | Endpoints listed above |
-| Jinja2 prompt from `prompt.txt` | Parameterized template |
-| `LLMProvider` with Ollama + OpenAI | Env-driven `LLM_PROVIDER` |
-| `POST /recipes` | Returns markdown + source attribution |
-| CLI `film-agent recipe` | Calls same service layer as API |
-| Safety disclaimer in output | "Verify times independently" |
+| Task | Deliverable | Status |
+|------|-------------|--------|
+| FastAPI app | `film_agent_api/` — health, search, lookup, recipes | Done |
+| Jinja2 prompt template | `film_llm/templates/recipe_prompt.j2` | Done |
+| `LLMProvider` with Ollama + OpenAI | Env-driven `LLM_PROVIDER` | Done |
+| **Recipe cache (SQLite)** | `data/cache/recipes.db` | Done |
+| `RecipeCacheService` | Cache key, `source_hash` invalidation, `force_regenerate` | Done |
+| `POST /recipes` | Markdown + `cached` flag + source attribution | Done |
+| CLI `film-agent recipe` | Same `RecipeService`; `--force` bypasses cache | Done |
+| Safety disclaimer in output | Appended to every recipe | Done |
 
-**Exit criteria:** `film-agent recipe --film ...` returns a numbered recipe using real lookup data.
+**Exit criteria:**
+- `film-agent recipe --film ...` returns a numbered recipe using real lookup data.
+- Second identical request returns `cached: true` with **no LLM call**.
+- Re-run pipeline (new `source_hash`) invalidates stale cache entries.
 
 ---
 
@@ -405,8 +475,9 @@ Migration can be **incremental** — no big-bang rewrite. Wrap existing modules 
 | React + Vite frontend | Search + recipe form in `apps/web/` |
 | Docker Compose services `api` + `web` | Full local stack |
 | Recipe markdown rendering | Print-friendly CSS |
+| Cached recipe UX | Show `Cached` badge; **Regenerate** → `force_regenerate` |
 
-**Exit criteria:** User can generate a recipe in the browser against local API.
+**Exit criteria:** User can generate a recipe in the browser against local API; repeat lookup uses cache unless regenerated.
 
 ---
 
@@ -449,6 +520,7 @@ Migration can be **incremental** — no big-bang rewrite. Wrap existing modules 
 | 8 | Monorepo tool | **uv** or **poetry** workspace when splitting packages |
 | 9 | AWS | **Optional Phase 6** — not required for OSS release |
 | 10 | OSS data policy | Ship code + tiny fixtures; users run scraper themselves ([LEGAL.md](LEGAL.md)) |
+| 11 | Recipe cache | **SQLite** at `data/cache/`; invalidate on `source_hash` / `prompt_version` change |
 
 ---
 
@@ -485,7 +557,7 @@ Migration can be **incremental** — no big-bang rewrite. Wrap existing modules 
 |-------|--------|
 | Phase 1 | Pipeline runs in < 30 min locally; 0 FK orphans in gold |
 | Phase 3 | CLI lookup < 500ms on gold parquet |
-| Phase 4 | Recipe includes all 10 sections from `prompt.txt` |
+| Phase 4 | Recipe includes all 10 sections; cache hit skips LLM on repeat request |
 | Phase 5 | End-to-end browser flow < 10s (excl. LLM) |
 | Phase 6 | AWS deploy reproducible via `terraform apply` *(if pursued)* |
 
@@ -494,7 +566,7 @@ Migration can be **incremental** — no big-bang rewrite. Wrap existing modules 
 ## What We Are NOT Doing Yet
 
 - Multi-source scrapers (beyond DigitalTruth)
-- User accounts / saved recipes database
+- User accounts (recipe cache is per-instance, not per-user auth)
 - Mobile native apps
 - Real-time scrape on every API request
 - Kubernetes (serverless-first per your direction)
@@ -503,26 +575,18 @@ Migration can be **incremental** — no big-bang rewrite. Wrap existing modules 
 
 ## Suggested Immediate Next Session
 
-When you're ready to code, start with **Phase 2** (silver/gold split) because it unlocks everything else with a clean data contract:
-
-1. Processor writes wide silver parquet
-2. Normalizer writes gold parquet
-3. DuckDB reads gold for CLI/API
-
-Then **Phase 3 CLI** validates the model before LLM complexity.
+Start with **Phase 5** (React web UI): search + lookup + recipe form calling the FastAPI backend.
 
 ---
 
-## Implementation Tickets (Phase 2)
+## Implementation Tickets (Phase 4) ✅
 
-Ready when you give the go-ahead for the silver/gold split:
-
-### Phase 2 — Silver / Gold split
-- [ ] Refactor transformer → **processor** (silver, wide fact table)
-- [ ] New **normalizer** package (gold, melt + FKs)
-- [ ] Update `entrypoint.py` → 3 stages
-- [ ] Update `docs/ARCHITECTURE.md` medallion diagram
-- [x] Gitignore `data/` outputs; move format catalog to `catalogs/`
+### Phase 4 — API + LLM Recipes
+- [x] FastAPI app with query + recipe endpoints
+- [x] Jinja2 prompt template from `prompt.txt` structure
+- [x] Ollama + OpenAI `LLMProvider`
+- [x] SQLite recipe cache with `source_hash` invalidation
+- [x] `film-agent recipe` CLI command
 
 ---
 

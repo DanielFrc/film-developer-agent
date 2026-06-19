@@ -43,7 +43,10 @@ DEVELOPING_TIMES_PARQUET = "digitaltruth_film_data.parquet.gz"
 LOG_CONFIG = os.path.abspath("logger/logging_config.ini")
 LOG_PATH = os.path.abspath("logs/")
 SCRAPPER_LOG = "digitaltruthscrapper.log"
-TRANSFORMER_LOG = "digitaltruthtransformer.log"
+PROCESSOR_LOG = "digitaltruthprocessor.log"
+NORMALIZER_LOG = "digitaltruthnormalizer.log"
+# Backward-compatible alias
+TRANSFORMER_LOG = PROCESSOR_LOG
 
 # Curated catalogs (versioned in repo, not scraped)
 REPO_ROOT = Path(__file__).resolve().parent
@@ -57,6 +60,7 @@ RAW_PATH: Path
 PROCESSED_PATH: str
 HISTORICAL_PATH: str
 MANIFESTS_PATH: str
+NORMALIZED_PATH: str
 FORMAT_PATH: str
 FILM_PATH: str
 DEVELOPERS_PATH: str
@@ -69,6 +73,10 @@ FORMAT_OUT: str
 DEVELOPERS_OUT: str
 FILMS_OUT: str
 DEVELOPING_TIMES_OUT: str
+GOLD_FORMAT_OUT: str
+GOLD_DEVELOPERS_OUT: str
+GOLD_FILMS_OUT: str
+GOLD_DEVELOPING_TIMES_OUT: str
 
 
 def refresh_from_env() -> None:
@@ -79,17 +87,19 @@ def refresh_from_env() -> None:
     paths = get_data_paths()
     paths.ensure_all()
 
-    global BASE_PATH, RAW_PATH, PROCESSED_PATH, HISTORICAL_PATH, MANIFESTS_PATH
+    global BASE_PATH, RAW_PATH, PROCESSED_PATH, HISTORICAL_PATH, MANIFESTS_PATH, NORMALIZED_PATH
     global FORMAT_PATH, FILM_PATH, DEVELOPERS_PATH, DEVELOPING_TIMES_PATH
     global FORMAT_METADATA_PATH, FILM_METADATA_PATH, DEVELOPERS_METADATA_PATH
     global DEVELOPING_TIMES_METADATA_PATH
     global FORMAT_OUT, DEVELOPERS_OUT, FILMS_OUT, DEVELOPING_TIMES_OUT
+    global GOLD_FORMAT_OUT, GOLD_DEVELOPERS_OUT, GOLD_FILMS_OUT, GOLD_DEVELOPING_TIMES_OUT
 
     BASE_PATH = str(paths.base)
     RAW_PATH = paths.raw
     PROCESSED_PATH = str(paths.processed)
     HISTORICAL_PATH = str(paths.historical)
     MANIFESTS_PATH = str(paths.manifests)
+    NORMALIZED_PATH = str(paths.normalized)
 
     FORMAT_PATH = str(CATALOGS_PATH / FORMAT_CATALOG_FILE)
     FORMAT_METADATA_PATH = str(CATALOGS_PATH / FORMAT_CATALOG_METADATA)
@@ -105,6 +115,11 @@ def refresh_from_env() -> None:
     DEVELOPERS_OUT = str(paths.processed / DEVELOPERS_PARQUET)
     FILMS_OUT = str(paths.processed / FILMS_PARQUET)
     DEVELOPING_TIMES_OUT = str(paths.processed / DEVELOPING_TIMES_PARQUET)
+
+    GOLD_FORMAT_OUT = str(paths.normalized / FORMAT_PARQUET)
+    GOLD_DEVELOPERS_OUT = str(paths.normalized / DEVELOPERS_PARQUET)
+    GOLD_FILMS_OUT = str(paths.normalized / FILMS_PARQUET)
+    GOLD_DEVELOPING_TIMES_OUT = str(paths.normalized / DEVELOPING_TIMES_PARQUET)
 
 
 refresh_from_env()

@@ -6,25 +6,34 @@ This document describes the current ETL pipeline: how data is scraped from Digit
 
 ```mermaid
 flowchart LR
-    subgraph scrape [Stage 1 — Scraper]
+    subgraph bronze [Stage 1 — Scraper]
         DT[DigitalTruth HTML]
         RAW[data/raw/*.json]
         DT --> RAW
     end
 
-    subgraph transform [Stage 2 — Transformer]
+    subgraph silver [Stage 2 — Processor]
         PROC[data/processed/*.parquet.gz]
         RAW --> PROC
     end
 
-    EP[entrypoint.py] --> scrape
-    scrape --> transform
+    subgraph gold [Stage 3 — Normalizer]
+        NORM[data/normalized/*.parquet.gz]
+        PROC --> NORM
+    end
+
+    EP[entrypoint.py] --> bronze
+    bronze --> silver
+    silver --> gold
 ```
 
-The pipeline is intentionally **two-stage and file-based**:
+The pipeline is **three-stage and file-based**:
 
-1. **Scraper** (`digitaltruth_scrapper/`) — fetches HTML, parses it, writes raw JSON + metadata.
-2. **Transformer** (`digitaltruth_transformer/`) — reads raw files, normalizes into a star-schema-like model, writes gzipped Parquet.
+1. **Scraper** (`digitaltruth_scrapper/`) — bronze JSON + metadata.
+2. **Processor** (`digitaltruth_processor/`) — silver typed Parquet (wide fact table).
+3. **Normalizer** (`digitaltruth_normalizer/`) — gold star-schema Parquet for API/CLI.
+
+`digitaltruth_transformer/` remains as a backward-compatible alias that runs processor + normalizer.
 
 Stages can run independently. Tests use fixtures under `tests/fixtures/`; pipeline output under `data/` is local and gitignored.
 
@@ -34,9 +43,11 @@ Stages can run independently. Tests use fixtures under `tests/fixtures/`; pipeli
 
 | Command | What it runs |
 |---------|--------------|
-| `python entrypoint.py` | Full pipeline: scraper → transformer |
-| `python digitaltruth_scrapper/digitaltruth_scrapper_job.py` | Scraper only |
-| `python digitaltruth_transformer/digitaltruth_transformer_job.py` | Transformer only |
+| `python entrypoint.py` | Full pipeline: scrape → process → normalize |
+| `python digitaltruth_scrapper/digitaltruth_scrapper_job.py` | Scraper only (bronze) |
+| `python digitaltruth_processor/processor_job.py` | Processor only (silver) |
+| `python digitaltruth_normalizer/normalizer_job.py` | Normalizer only (gold) |
+| `python digitaltruth_transformer/digitaltruth_transformer_job.py` | Processor + normalizer (alias) |
 
 ---
 

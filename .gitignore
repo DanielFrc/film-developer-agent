@@ -121,6 +121,8 @@ data/manifests/**
 !data/manifests/.gitkeep
 data/normalized/**
 !data/normalized/.gitkeep
+data/cache/**
+!data/cache/.gitkeep
 
 .direnv
 .envrc
