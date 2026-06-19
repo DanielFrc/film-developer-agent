@@ -1,0 +1,32 @@
+Generate a complete and detailed black and white film development recipe. The response should be a numbered list covering all process steps, from preparation to drying.
+
+Development Data:
+* Film: {{ film }} ({{ format }})
+* Developer: {{ developer }}
+* ISO / EI: {{ iso }}
+* Base Time: {{ base_time }} minutes
+* Temperature: {{ temperature }}°C
+* Dilution: {{ dilution }}
+{% if notes %}
+* Notes: {{ notes }}
+{% endif %}
+{% if extra_context %}
+
+Photographer preferences (adapt instructions only — do not change base time):
+* {{ extra_context }}
+{% endif %}
+
+Include the following points in the recipe, numbered in this exact order:
+1.  Materials: Simple list.
+2.  Prerequisites: Key points.
+3.  Developer Preparation ({{ developer_volume }}): Exact steps.
+4.  Pre-soak: Yes/No and details (time, temp).
+5.  Developer Agitation: Pattern (initial, subsequent).
+6.  Stop Bath: Type and time.
+7.  Fixer: Times (normal, rapid).
+8.  Washing (Ilford method): Detail the Ilford-recommended washing method (fill, invert 5x, drain; fill, invert 10x, drain; fill, invert 20x, drain), specifying water temperature.
+9.  Drying: Method and tips.
+10. General Precautions & Advice: Key safety and recommendations.
+
+The recipe must be easy to follow and prioritize safety.
+Do not change the base developing time of {{ base_time }} minutes.

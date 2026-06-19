@@ -4,6 +4,8 @@ from pathlib import Path
 import pytest
 
 import config
+from digitaltruth_normalizer.normalizer_job import run_normalizer
+from digitaltruth_processor.processor_job import run_processor
 
 FIXTURES_DIR = Path(__file__).parent / "fixtures"
 RAW_FIXTURES = FIXTURES_DIR / "raw"
@@ -16,6 +18,7 @@ def isolated_data_dir(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
     raw_dir = data_root / "raw"
     raw_dir.mkdir(parents=True)
     (data_root / "processed").mkdir()
+    (data_root / "normalized").mkdir()
     (data_root / "historical").mkdir()
     (data_root / "manifests").mkdir()
 
@@ -26,6 +29,15 @@ def isolated_data_dir(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
     config.refresh_from_env()
     yield data_root
     config.refresh_from_env()
+
+
+@pytest.fixture
+def gold_dataset(isolated_data_dir):
+    """Build silver + gold parquet in an isolated DATA_PATH."""
+    run_processor()
+    run_normalizer()
+    config.refresh_from_env()
+    yield isolated_data_dir
 
 
 @pytest.fixture
