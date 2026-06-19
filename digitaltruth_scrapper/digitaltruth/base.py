@@ -3,7 +3,14 @@ import random
 
 import requests
 
-from config import DIGITAL_TRUTH_FILM_URL, DIGITALTRUTH_URL, RANDOM_HEADERS
+from config import (
+    DIGITAL_TRUTH_FILM_URL,
+    DIGITALTRUTH_URL,
+    RANDOM_HEADERS,
+    SCRAPE_DELAY_MAX,
+    SCRAPE_DELAY_MIN,
+)
+from digitaltruth_scrapper.utils.random_delay import random_delay
 
 logger = logging.getLogger(__name__)
 
@@ -25,7 +32,7 @@ def get_digitaltruth_info(
 
     Args:
         film_name: The name of the film to search for (optional).
-        timeout: Timeout for the HTTP request in seconds (default: 10).
+        timeout: Timeout for the HTTP request in seconds (default: 30).
 
     Returns:
         The response text if successful, otherwise None.
@@ -36,6 +43,7 @@ def get_digitaltruth_info(
 
     if film_name:
         logger.info(f"Fetching information for film: {film_name}")
+        random_delay(SCRAPE_DELAY_MIN, SCRAPE_DELAY_MAX)
     else:
         logger.info("Fetching general digitaltruth information.")
 

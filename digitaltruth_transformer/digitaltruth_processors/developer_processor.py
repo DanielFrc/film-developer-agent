@@ -25,7 +25,7 @@ def process_developers_data(
         full_developers_list (array-like): Raw list of developer names.
 
     Returns:
-        pd
+        pd.DataFrame: The processed DataFrame with audit columns.
     """
 
     logger = logging.getLogger(__name__)

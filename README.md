@@ -1,103 +1,158 @@
-# Film developer agent - Data Engineering stage
+# Film Developer Agent — Data Engineering Stage
 
-This project implements the data ingestion and transformation pipeline for the Film Developer Agent. Its goal is to collect, clean, and normalize data from DigitalTruth, creating a structured dataset ready for downstream tasks such as model training or recipe generation.
+ETL pipeline that scrapes film development data from [DigitalTruth](https://www.digitaltruth.com/devchart.php), stores raw JSON, and produces normalized Parquet tables for films, developers, formats, and developing times.
+
+For architecture details, data model, and design decisions, see [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).  
+For the product roadmap and phased plan, see [docs/ROADMAP.md](docs/ROADMAP.md).  
+For open-source and DigitalTruth legal considerations, see [docs/LEGAL.md](docs/LEGAL.md).
 
 ---
 
-## Features
+## What It Does
 
-* Scraper Stage
-  * Built with BeautifulSoup4
-  * Extracts film and developer data from DigitalTruth’s development chart.
+1. **Scrape** — Fetches film/developer catalogs and per-film development time tables from DigitalTruth.
+2. **Transform** — Normalizes data into four related tables (star-schema-like).
+3. **Load** — Writes gzipped Parquet files with embedded scrape metadata.
 
-* ETL Process
-  * Extract: Parses raw scraped HTML into structured records.
-  * Transform: Cleans, validates, and normalizes the extracted data.
-  * Load: Saves to a Parquet dataset with a normalized schema.
+---
 
-* Normalized Data Model
-  * Four tables are generated:
+## Output Tables
 
-1. Films – Metadata about film stocks.
-2. Developers – Information about film developers.
-3. Film Formats – Supported formats (e.g., 35mm, 120, sheet film).
-4. Developing Times (Fact Table) – Relationships between films, developers, formats, ISO ratings, and development times.
-
-* Containerization
-  * Ready to run in Docker or orchestrated with Docker Compose.
-  * Volumes configured for local data persistence.
+| Parquet file | Description |
+|--------------|-------------|
+| `digitaltruth_films.parquet.gz` | Film stocks (dimension) |
+| `digitaltruth_developers.parquet.gz` | Developers (dimension) |
+| `digitaltruth_formats.parquet.gz` | Film formats — 35mm, 120, sheet, etc. (dimension) |
+| `digitaltruth_film_data.parquet.gz` | Developing times — fact table with FKs |
 
 ---
 
 ## Project Structure
 
-```graphql
-film_developer_agent/
-├── data/                       # Sample data
-├── digitaltruth_scrapper       # Extraction logic
-├── digitaltruth_transformer    # Transformation logic
-├── logger                      # Logger configuration
-├── compose.yml                 # Multi-container setup (if needed)
-├── config.py                   # ETL Configuration properties
-├── entry.py                    # Wrapper for one-step execution
-├── Dockerfile                  # Container for ETL pipeline
-├── requirements.txt            # Python Documentation
-└── README.md                   # Project documentation
-
+```
+film-developer-agent/
+├── entrypoint.py                 # Runs full pipeline + manifest
+├── config.py                     # Paths, URLs, scrape tuning
+├── film_core/                    # Storage, manifests, pipeline orchestration
+├── catalogs/                     # Curated seed catalogs (film formats)
+├── data/                         # Local pipeline output (gitignored)
+├── digitaltruth_scrapper/        # Stage 1: web scraping
+├── digitaltruth_transformer/     # Stage 2: ETL / normalization
+├── tests/                        # Pytest suite + HTML/JSON fixtures
+├── logger/                       # Logging configuration
+├── docs/
+├── Dockerfile
+├── compose.yml
+├── pyproject.toml
+└── requirements.txt
 ```
 
 ---
 
 ## Quickstart
 
-### Prequisites
+### Prerequisites
 
-* Python 3.13+
-* Docker & Docker compose (optional)
+- Python 3.13+
+- Docker & Docker Compose (optional)
 
-### Run Locally
+### Run locally
 
 ```bash
-
-# Install dependencies
-pip install -r requirements.txt
-
-# Run ETL pipeline
+python -m venv .venv
+source .venv/bin/activate   # Windows: .venv\Scripts\activate
+pip install -e ".[dev]"
 python entrypoint.py
-
 ```
 
-Output will be saved as Parquet under `./data/`
+Output is written under `./data/processed/`. A run manifest is saved under `./data/manifests/`. Logs go to `./logs/`.
+
+Run stages independently:
+
+```bash
+python digitaltruth_scrapper/digitaltruth_scrapper_job.py
+python digitaltruth_transformer/digitaltruth_transformer_job.py
+```
+
+### Environment variables
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `DATA_PATH` | `data/` | Base directory for raw/processed data |
+| `MAX_WORKERS` | `10` | Parallel film fetches during scrape |
+| `SCRAPE_DELAY_MIN` | `0.5` | Min delay (seconds) between per-film requests |
+| `SCRAPE_DELAY_MAX` | `1.5` | Max delay (seconds) between per-film requests |
+| `SCRAPE_MAX_RETRIES` | `3` | Retries for failed film fetches |
 
 ### Run with Docker
 
 ```bash
-
-# Build image
 docker build -t film-dev-agent .
-
-# Run container
-docker run --rm -v $(pwd)/data:/data film-dev-agent
-
+docker run --rm -v "$(pwd)/data:/data" film-dev-agent
 ```
 
 ### Run with Docker Compose
 
 ```bash
-# Build image
-docker build -t film-dev-agent .
+docker compose up --build
+```
 
-# Run container
-docker run --rm -v $(pwd)/data:/data film-dev-agent
+### Development
 
+```bash
+pip install -e ".[dev]"
+ruff check .
+pytest -q
+```
+
+---
+
+## Data Layout
+
+Pipeline output is **local only** and gitignored. After running the pipeline:
+
+```
+data/
+├── raw/           # Scraper JSON (DigitalTruth)
+├── processed/     # Transformer Parquet (silver, today)
+├── normalized/    # Gold layer (Phase 2)
+├── historical/    # Rotated Parquet on overwrite
+└── manifests/     # Pipeline run manifests
+```
+
+Curated seed catalog (committed):
+
+```
+catalogs/
+└── film_formats.json    # Format dimension (not from DigitalTruth)
+```
+
+To populate data, run `python entrypoint.py` or the individual stage jobs.  
+Tests use fixtures under `tests/fixtures/` — no committed scrape data.
+
+---
+
+## Dependencies
+
+```
+beautifulsoup4
+requests
+pandas
+pyarrow
 ```
 
 ---
 
 ## Next Steps
 
-This repository currently covers only the Data Engineering stage. Future components may include:
+Phase 1 (stabilize & test) is in place. Planned extensions:
 
-* API layer for querying normalized data.
-* Integration with local or cloud LLMs to generate development recipes.
-* Additional scrapers for complementary sources.
+- Phase 2: Silver / gold data layer split
+- CLI + API + LLM recipe generation
+- React web UI
+
+See [docs/ROADMAP.md](docs/ROADMAP.md) for the full plan.
+
+## Data source & legal
+
+This tool reads publicly available data from [DigitalTruth](https://www.digitaltruth.com/devchart.php). It is **not affiliated** with Digitaltruth Photo Ltd. Users run the scraper themselves; see [docs/LEGAL.md](docs/LEGAL.md) before open-source release.

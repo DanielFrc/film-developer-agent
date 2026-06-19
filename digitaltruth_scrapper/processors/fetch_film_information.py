@@ -4,6 +4,7 @@ from digitaltruth_scrapper.digitaltruth.base import get_digitaltruth_info
 from digitaltruth_scrapper.digitaltruth.fetch_developers import parse_developer_list
 from digitaltruth_scrapper.digitaltruth.fetch_films import parse_film_list
 from digitaltruth_scrapper.digitaltruth.fetch_times import get_film_information
+from digitaltruth_scrapper.utils.random_delay import random_delay
 
 
 def fetch_films_and_developers():
@@ -101,7 +102,7 @@ def retry_fetch_film_times(
             logger.error(
                 f"Failed to fetch information for {film_name} after retry {retry_count[film_name]}. Will retry again."
             )
-            # time.sleep(random_delay())
+            random_delay()
             queue.append(film)
         else:
             logger.error(

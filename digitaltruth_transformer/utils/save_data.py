@@ -6,7 +6,7 @@ from datetime import datetime
 import pyarrow as pa
 import pyarrow.parquet as pq
 
-from config import HISTORICAL_PATH
+import config
 
 
 def save_to_parquet(df, metadata, path):
@@ -23,21 +23,19 @@ def save_to_parquet(df, metadata, path):
 
         table = pa.Table.from_pandas(df)
 
-        existing_meta = table.schema.metadata or {}
+        existing_meta = dict(table.schema.metadata or {})
 
-        new_meta = {
-            "source_url": metadata["source_url"],
-            "scrape_date": metadata["scrape_date"],
-            "site_version": metadata["site_version"],
-            "scrapper_version": metadata["scrapper_version"],
-            "source_hash": metadata["data_hash"],
-            "record_count": len(df),
+        custom_meta = {
+            b"source_url": str(metadata["source_url"]).encode("utf-8"),
+            b"scrape_date": str(metadata["scrape_date"]).encode("utf-8"),
+            b"site_version": str(metadata["site_version"]).encode("utf-8"),
+            b"scrapper_version": str(metadata["scrapper_version"]).encode("utf-8"),
+            b"source_hash": str(metadata["data_hash"]).encode("utf-8"),
+            b"record_count": str(len(df)).encode("utf-8"),
         }
+        existing_meta.update(custom_meta)
 
-        merged_meta = {**existing_meta, **new_meta}
-        merged_meta = {k: str(v).encode() for k, v in merged_meta.items()}
-
-        table = table.replace_schema_metadata(merged_meta)
+        table = table.replace_schema_metadata(existing_meta)
         pq.write_table(table, path)
 
         logger.info(f"Saved DataFrame to {path}")
@@ -46,7 +44,7 @@ def save_to_parquet(df, metadata, path):
         logger.error(f"Failed to save {path}: {e}")
 
 
-def move_to_historical(filepath, historical_dir=HISTORICAL_PATH):
+def move_to_historical(filepath, historical_dir=None):
     """
     Moves the current output file to a historical directory with a timestamp before overwriting.
 
@@ -55,6 +53,7 @@ def move_to_historical(filepath, historical_dir=HISTORICAL_PATH):
         historical_dir (str): Directory for historical files.
     """
     logger = logging.getLogger(__name__)
+    historical_dir = historical_dir or config.HISTORICAL_PATH
     if os.path.exists(filepath):
         # Ensure historical directory exists
         os.makedirs(historical_dir, exist_ok=True)

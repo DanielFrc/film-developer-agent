@@ -18,6 +18,8 @@ COLUMNS_ORDER = [
     "format",
     "format_id",
     "dev_time",
+    "temp",
+    "notes",
     "created_at",
     "updated_at",
     "active",
@@ -80,10 +82,10 @@ def process_developers_times_data(
         lambda row: get_catalog_id(row, developers_df, "developer", "id"), axis=1
     )
 
-    # Fill missing format times
+    # Fill missing format times from 35mm before reshaping
     logger.debug("Filling missing format times from '35mm'.")
-    times_df["time_120"] = times_df["120"].fillna(times_df["35mm"])
-    times_df["time_sheet"] = times_df["sheet"].fillna(times_df["35mm"])
+    times_df["120"] = times_df["120"].fillna(times_df["35mm"])
+    times_df["sheet"] = times_df["sheet"].fillna(times_df["35mm"])
 
     # Reshape DataFrame to long format
     logger.debug("Melting DataFrame to long format for 'format' and 'dev_time'.")
@@ -96,6 +98,7 @@ def process_developers_times_data(
             "iso",
             "dilution",
             "temp",
+            "notes",
         ],
         value_vars=["35mm", "120", "sheet"],
         var_name="format",
