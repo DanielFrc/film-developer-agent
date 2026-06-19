@@ -1,24 +1,7 @@
-import json
 import logging
 
-from config import (
-    DEVELOPERS_METADATA_PATH,
-    DEVELOPERS_PATH,
-    DEVELOPING_TIMES_METADATA_PATH,
-    DEVELOPING_TIMES_PATH,
-    FILM_METADATA_PATH,
-    FILM_PATH,
-    FORMAT_METADATA_PATH,
-    FORMAT_PATH,
-)
+import config
 from digitaltruth_transformer.utils.read_data import read_data_from_file, read_raw_json
-
-
-def _read_metadata(file_path):
-    with open(file_path) as f:
-        data = json.load(f)
-
-    return data
 
 
 def read_catalogs():
@@ -32,33 +15,30 @@ def read_catalogs():
     logger.info("Reading all catalog data sources.")
 
     developing_times = {
-        "df": read_data_from_file(DEVELOPING_TIMES_PATH),
-        "metadata": read_raw_json(DEVELOPING_TIMES_METADATA_PATH),
+        "df": read_data_from_file(config.DEVELOPING_TIMES_PATH),
+        "metadata": read_raw_json(config.DEVELOPING_TIMES_METADATA_PATH),
     }
-    logger.debug(f"Loaded developing times data from {DEVELOPING_TIMES_PATH}")
+    logger.debug(f"Loaded developing times data from {config.DEVELOPING_TIMES_PATH}")
 
-    # Read film format data
     film_format = {
-        "df": read_data_from_file(FORMAT_PATH),
-        "metadata": read_raw_json(FORMAT_METADATA_PATH),
+        "df": read_data_from_file(config.FORMAT_PATH),
+        "metadata": read_raw_json(config.FORMAT_METADATA_PATH),
     }
 
-    logger.debug(f"Loaded film format data from {FORMAT_PATH}")
+    logger.debug(f"Loaded film format data from {config.FORMAT_PATH}")
 
-    # Read developers data
     developers = {
-        "df": read_data_from_file(DEVELOPERS_PATH),
-        "metadata": read_raw_json(DEVELOPERS_METADATA_PATH),
+        "df": read_data_from_file(config.DEVELOPERS_PATH),
+        "metadata": read_raw_json(config.DEVELOPERS_METADATA_PATH),
     }
 
-    logger.debug(f"Loaded developers data from {DEVELOPERS_PATH}")
+    logger.debug(f"Loaded developers data from {config.DEVELOPERS_PATH}")
 
-    # Read films data
     films = {
-        "df": read_data_from_file(FILM_PATH),
-        "metadata": read_raw_json(FILM_METADATA_PATH),
+        "df": read_data_from_file(config.FILM_PATH),
+        "metadata": read_raw_json(config.FILM_METADATA_PATH),
     }
-    logger.debug(f"Loaded films data from {FILM_PATH}")
+    logger.debug(f"Loaded films data from {config.FILM_PATH}")
 
     logger.info("All catalog data sources loaded successfully.")
 

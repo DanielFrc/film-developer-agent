@@ -1,7 +1,15 @@
 import logging
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
-from config import LOG_CONFIG, LOG_PATH, MAX_WORKERS, SCRAPPER_LOG
+from config import (
+    DIGITAL_TRUTH_FILM_URL,
+    DIGITALTRUTH_URL,
+    LOG_CONFIG,
+    LOG_PATH,
+    MAX_WORKERS,
+    SCRAPE_MAX_RETRIES,
+    SCRAPPER_LOG,
+)
 from digitaltruth_scrapper.processors.fetch_film_information import (
     fetch_film_times,
     fetch_films_and_developers,
@@ -17,8 +25,8 @@ def run_scrapper():
 
     films, developers = fetch_films_and_developers()
 
-    save_data_to_json(films, "digitaltruth_films")
-    save_data_to_json(developers, "digitaltruth_developers")
+    save_data_to_json(films, "digitaltruth_films", source_url=DIGITALTRUTH_URL)
+    save_data_to_json(developers, "digitaltruth_developers", source_url=DIGITALTRUTH_URL)
 
     logger.info("Fetching film development times in parallel...")
     film_results = []
@@ -45,10 +53,14 @@ def run_scrapper():
 
     if failed_films:
         logger.info("Retrying failed film fetches...")
-        retry_results = retry_fetch_film_times(failed_films)
+        retry_results = retry_fetch_film_times(failed_films, max_retries=SCRAPE_MAX_RETRIES)
         film_results.extend(retry_results)
 
-    save_data_to_json(film_results, "digitaltruth_film_data")
+    save_data_to_json(
+        film_results,
+        "digitaltruth_film_data",
+        source_url=DIGITAL_TRUTH_FILM_URL.replace("<FILM>", "{film}"),
+    )
 
     logger.info("All tasks completed.")
 

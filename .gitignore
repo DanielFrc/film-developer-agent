@@ -110,7 +110,21 @@ env/
 
 logs/
 
+# Local pipeline data lake (generated at runtime — do not commit)
+data/raw/**
+!data/raw/.gitkeep
+data/processed/**
+!data/processed/.gitkeep
+data/historical/**
+!data/historical/.gitkeep
+data/manifests/**
+!data/manifests/.gitkeep
+data/normalized/**
+!data/normalized/.gitkeep
+
 .direnv
-*.toml
 .envrc
+# Local tool configs (keep pyproject.toml tracked)
+pyrightconfig.toml
+ruff.toml
 

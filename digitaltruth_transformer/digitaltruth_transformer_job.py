@@ -1,14 +1,6 @@
 import logging
 
-from config import (
-    DEVELOPERS_OUT,
-    DEVELOPING_TIMES_OUT,
-    FILMS_OUT,
-    FORMAT_OUT,
-    LOG_CONFIG,
-    LOG_PATH,
-    TRANSFORMER_LOG,
-)
+import config
 from digitaltruth_transformer.digitaltruth_processors.developer_processor import (
     process_developers_data,
 )
@@ -27,8 +19,7 @@ from logger.logger_config import setup_logging
 
 
 def run_transformer():
-    setup_logging(LOG_CONFIG, LOG_PATH, TRANSFORMER_LOG)
-    setup_logging("logger/logging_config.ini", "logs/", "digitaltruthtransformer.log")
+    setup_logging(config.LOG_CONFIG, config.LOG_PATH, config.TRANSFORMER_LOG)
     logger = logging.getLogger(__name__)
 
     logger.info("Starting data processing pipeline.")
@@ -55,11 +46,11 @@ def run_transformer():
 
     logger.info("Saving final output to parquets")
 
-    save_to_parquet(film_format_df, film_format["metadata"], FORMAT_OUT)
-    save_to_parquet(developers_df, developers["metadata"], DEVELOPERS_OUT)
-    save_to_parquet(films_df, films["metadata"], FILMS_OUT)
+    save_to_parquet(film_format_df, film_format["metadata"], config.FORMAT_OUT)
+    save_to_parquet(developers_df, developers["metadata"], config.DEVELOPERS_OUT)
+    save_to_parquet(films_df, films["metadata"], config.FILMS_OUT)
     save_to_parquet(
-        developing_times_df, developing_times["metadata"], DEVELOPING_TIMES_OUT
+        developing_times_df, developing_times["metadata"], config.DEVELOPING_TIMES_OUT
     )
 
 

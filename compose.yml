@@ -7,7 +7,7 @@ services:
     environment:
       - DATA_PATH=/data
     volumes:
-      - ./local_s3:/data
+      - ./data:/data
     command: python entrypoint.py
 
 volumes:
