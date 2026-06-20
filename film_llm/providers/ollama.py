@@ -1,7 +1,7 @@
 import httpx
 
 from film_llm.providers.base import LLMResponse
-from film_llm.settings import OLLAMA_BASE_URL, OLLAMA_MODEL
+from film_llm.settings import OLLAMA_BASE_URL, OLLAMA_MODEL, OLLAMA_TIMEOUT
 
 
 class OllamaProvider:
@@ -13,7 +13,7 @@ class OllamaProvider:
         *,
         base_url: str = OLLAMA_BASE_URL,
         model: str = OLLAMA_MODEL,
-        timeout: float = 120.0,
+        timeout: float = OLLAMA_TIMEOUT,
     ) -> None:
         self._base_url = base_url.rstrip("/")
         self.model_name = model
@@ -28,10 +28,27 @@ class OllamaProvider:
             ],
             "stream": False,
         }
-        with httpx.Client(timeout=self._timeout) as client:
-            response = client.post(f"{self._base_url}/api/chat", json=payload)
-            response.raise_for_status()
-            data = response.json()
+        timeout = httpx.Timeout(self._timeout, connect=10.0)
+        try:
+            with httpx.Client(timeout=timeout) as client:
+                response = client.post(f"{self._base_url}/api/chat", json=payload)
+                response.raise_for_status()
+                data = response.json()
+        except httpx.TimeoutException as exc:
+            raise RuntimeError(
+                f"Ollama request timed out after {self._timeout:g}s. "
+                f"Large models like {self.model_name} may need a higher OLLAMA_TIMEOUT."
+            ) from exc
+        except httpx.HTTPStatusError as exc:
+            raise RuntimeError(
+                f"Ollama request failed ({exc.response.status_code}). "
+                f"Check OLLAMA_BASE_URL ({self._base_url}) and OLLAMA_MODEL ({self.model_name})."
+            ) from exc
+        except httpx.RequestError as exc:
+            raise RuntimeError(
+                f"Cannot reach Ollama at {self._base_url}. "
+                "Ensure Ollama is running and reachable from the API host."
+            ) from exc
 
         content = data.get("message", {}).get("content", "").strip()
         if not content:

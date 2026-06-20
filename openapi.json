@@ -1,0 +1,985 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Film Developer Agent API",
+    "description": "Query gold developing times and generate LLM recipes.",
+    "version": "0.1.0"
+  },
+  "paths": {
+    "/health": {
+      "get": {
+        "summary": "Health",
+        "operationId": "health_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/stats": {
+      "get": {
+        "summary": "Get Dataset Stats",
+        "operationId": "get_dataset_stats_stats_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DatasetStatsResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/films": {
+      "get": {
+        "summary": "List Films",
+        "operationId": "list_films_films_get",
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Film search query.",
+              "title": "Q"
+            },
+            "description": "Film search query."
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 50,
+              "minimum": 1,
+              "default": 10,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SearchResultItem"
+                  },
+                  "title": "Response List Films Films Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/developers": {
+      "get": {
+        "summary": "List Developers",
+        "operationId": "list_developers_developers_get",
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Developer search query.",
+              "title": "Q"
+            },
+            "description": "Developer search query."
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 50,
+              "minimum": 1,
+              "default": 10,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SearchResultItem"
+                  },
+                  "title": "Response List Developers Developers Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/formats": {
+      "get": {
+        "summary": "List Formats",
+        "operationId": "list_formats_formats_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/FormatItem"
+                  },
+                  "type": "array",
+                  "title": "Response List Formats Formats Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/developing-times": {
+      "get": {
+        "summary": "Get Developing Times",
+        "operationId": "get_developing_times_developing_times_get",
+        "parameters": [
+          {
+            "name": "film",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Film"
+            }
+          },
+          {
+            "name": "developer",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Developer"
+            }
+          },
+          {
+            "name": "format",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Format"
+            }
+          },
+          {
+            "name": "iso",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Iso"
+            }
+          },
+          {
+            "name": "dilution",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Dilution"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/DevelopingTimeItem"
+                  },
+                  "title": "Response Get Developing Times Developing Times Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/explorer/schema": {
+      "get": {
+        "summary": "Get Explorer Schema",
+        "operationId": "get_explorer_schema_explorer_schema_get",
+        "parameters": [
+          {
+            "name": "layer",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "bronze, silver, or gold",
+              "title": "Layer"
+            },
+            "description": "bronze, silver, or gold"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExplorerSchemaResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/explorer/data": {
+      "get": {
+        "summary": "Get Explorer Data",
+        "operationId": "get_explorer_data_explorer_data_get",
+        "parameters": [
+          {
+            "name": "layer",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Layer"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1,
+              "title": "Page"
+            }
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 25,
+              "title": "Page Size"
+            }
+          },
+          {
+            "name": "film",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Film"
+            }
+          },
+          {
+            "name": "developer",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Developer"
+            }
+          },
+          {
+            "name": "iso",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Iso"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExplorerDataResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/recipes": {
+      "post": {
+        "summary": "Create Recipe",
+        "operationId": "create_recipe_recipes_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RecipeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecipeResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "DatasetStatsResponse": {
+        "properties": {
+          "films": {
+            "type": "integer",
+            "title": "Films"
+          },
+          "developers": {
+            "type": "integer",
+            "title": "Developers"
+          },
+          "developing_time_combinations": {
+            "type": "integer",
+            "title": "Developing Time Combinations"
+          },
+          "source": {
+            "type": "string",
+            "title": "Source",
+            "default": "DigitalTruth"
+          },
+          "source_hash": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Hash"
+          }
+        },
+        "type": "object",
+        "required": [
+          "films",
+          "developers",
+          "developing_time_combinations"
+        ],
+        "title": "DatasetStatsResponse"
+      },
+      "DevelopingTimeItem": {
+        "properties": {
+          "film": {
+            "type": "string",
+            "title": "Film"
+          },
+          "developer": {
+            "type": "string",
+            "title": "Developer"
+          },
+          "format": {
+            "type": "string",
+            "title": "Format"
+          },
+          "iso": {
+            "type": "string",
+            "title": "Iso"
+          },
+          "dilution": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dilution"
+          },
+          "dev_time": {
+            "type": "string",
+            "title": "Dev Time"
+          },
+          "temp": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Temp"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "film_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Film Id"
+          },
+          "developer_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Developer Id"
+          },
+          "format_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Format Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "film",
+          "developer",
+          "format",
+          "iso",
+          "dev_time"
+        ],
+        "title": "DevelopingTimeItem"
+      },
+      "ExplorerColumnSchema": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "type": {
+            "type": "string",
+            "title": "Type"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "type"
+        ],
+        "title": "ExplorerColumnSchema"
+      },
+      "ExplorerDataResponse": {
+        "properties": {
+          "layer": {
+            "type": "string",
+            "title": "Layer"
+          },
+          "rows": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Rows"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "page": {
+            "type": "integer",
+            "title": "Page"
+          },
+          "page_size": {
+            "type": "integer",
+            "title": "Page Size"
+          },
+          "columns": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Columns"
+          }
+        },
+        "type": "object",
+        "required": [
+          "layer",
+          "rows",
+          "total",
+          "page",
+          "page_size",
+          "columns"
+        ],
+        "title": "ExplorerDataResponse"
+      },
+      "ExplorerSchemaResponse": {
+        "properties": {
+          "layer": {
+            "type": "string",
+            "title": "Layer"
+          },
+          "columns": {
+            "items": {
+              "$ref": "#/components/schemas/ExplorerColumnSchema"
+            },
+            "type": "array",
+            "title": "Columns"
+          }
+        },
+        "type": "object",
+        "required": [
+          "layer",
+          "columns"
+        ],
+        "title": "ExplorerSchemaResponse"
+      },
+      "FormatItem": {
+        "properties": {
+          "format": {
+            "type": "string",
+            "title": "Format"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "format"
+        ],
+        "title": "FormatItem"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "HealthResponse": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status",
+            "default": "ok"
+          }
+        },
+        "type": "object",
+        "title": "HealthResponse"
+      },
+      "RecipeLookupItem": {
+        "properties": {
+          "film": {
+            "type": "string",
+            "title": "Film"
+          },
+          "developer": {
+            "type": "string",
+            "title": "Developer"
+          },
+          "format": {
+            "type": "string",
+            "title": "Format"
+          },
+          "iso": {
+            "type": "string",
+            "title": "Iso"
+          },
+          "dilution": {
+            "type": "string",
+            "title": "Dilution"
+          },
+          "base_time": {
+            "type": "string",
+            "title": "Base Time"
+          },
+          "temperature": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Temperature"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          }
+        },
+        "type": "object",
+        "required": [
+          "film",
+          "developer",
+          "format",
+          "iso",
+          "dilution",
+          "base_time"
+        ],
+        "title": "RecipeLookupItem"
+      },
+      "RecipeRequest": {
+        "properties": {
+          "film": {
+            "type": "string",
+            "title": "Film"
+          },
+          "developer": {
+            "type": "string",
+            "title": "Developer"
+          },
+          "format": {
+            "type": "string",
+            "title": "Format"
+          },
+          "iso": {
+            "type": "string",
+            "title": "Iso"
+          },
+          "dilution": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dilution"
+          },
+          "extra_context": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Extra Context"
+          },
+          "force_regenerate": {
+            "type": "boolean",
+            "title": "Force Regenerate",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "film",
+          "developer",
+          "format",
+          "iso"
+        ],
+        "title": "RecipeRequest"
+      },
+      "RecipeResponse": {
+        "properties": {
+          "recipe": {
+            "type": "string",
+            "title": "Recipe"
+          },
+          "cached": {
+            "type": "boolean",
+            "title": "Cached"
+          },
+          "cache_key": {
+            "type": "string",
+            "title": "Cache Key"
+          },
+          "source": {
+            "type": "string",
+            "title": "Source"
+          },
+          "source_hash": {
+            "type": "string",
+            "title": "Source Hash"
+          },
+          "disclaimer": {
+            "type": "string",
+            "title": "Disclaimer"
+          },
+          "prompt_version": {
+            "type": "string",
+            "title": "Prompt Version"
+          },
+          "llm_provider": {
+            "type": "string",
+            "title": "Llm Provider"
+          },
+          "llm_model": {
+            "type": "string",
+            "title": "Llm Model"
+          },
+          "lookup": {
+            "$ref": "#/components/schemas/RecipeLookupItem"
+          },
+          "extra_context": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Extra Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "recipe",
+          "cached",
+          "cache_key",
+          "source",
+          "source_hash",
+          "disclaimer",
+          "prompt_version",
+          "llm_provider",
+          "llm_model",
+          "lookup"
+        ],
+        "title": "RecipeResponse"
+      },
+      "SearchResultItem": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "value": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value"
+          },
+          "score": {
+            "type": "number",
+            "title": "Score"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "score"
+        ],
+        "title": "SearchResultItem"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      }
+    }
+  }
+}

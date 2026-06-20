@@ -1,0 +1,80 @@
+You are a senior frontend developer. You are given a task to build the frontend for a film development agent.
+
+Stack:
+- Frontend: React + Vite + TypeScript
+- Styling: Tailwind
+- The UI must consume existing REST endpoints
+
+Objective:
+A film development agent is an app for consulting, analyzing and recommending film developing times.
+
+Screens required:
+1. Home / Dashboard
+- Show a summary of the project.
+- Cards con:
+  - Total of films
+  - Total of developers
+  - Total of film + developer combinations
+  - Last queries
+- Main button: "New query"
+
+2. Search / Search
+Fields:
+- Film stock
+- ISO nominal
+- ISO exposed
+- Developer
+- Dilution
+- Temperature °C / °F
+- Agitation method
+
+Actions:
+- Recommended time
+- Source
+- Notes
+- Confidence level
+- Warnings
+
+3. Development Recipe Detail
+Must show:
+- Film stock
+- Developer
+- Dilution
+- Temperature
+- Time
+- Agitation method
+- Technical notes
+- Sources
+- Copy recipe button
+
+4. Data Explorer
+Objective:
+Explore data Bronze/Silver/Gold.
+
+Components:
+- Layer selector: Bronze, Silver, Gold
+- Paginated table
+- Filters by film, developer, ISO, source
+- Schema view
+- Export CSV button
+
+5. Generate Recipe
+- User input (film, developer, ISO, format, dilution, extra context)
+- Recipe response
+- Side panel with sources consulted
+- Loading state while querying LLM
+
+
+Architecture:
+- Create routing by screen.
+- Create reusable components.
+- Create API services.
+- Create types/interfaces TypeScript.
+- Handle loading, error and empty states.
+- No hardcode data except for mock data.
+
+Design:
+- Simple, functional design.
+- Clean, technical, darkroom + data engineering feel.
+- Legible over decorative.
+- Soft autum color palette.

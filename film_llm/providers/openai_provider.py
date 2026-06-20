@@ -15,14 +15,20 @@ class OpenAIProvider:
         self.model_name = model
 
     def generate(self, *, system_message: str, user_prompt: str) -> LLMResponse:
-        response = self._client.chat.completions.create(
-            model=self.model_name,
-            messages=[
-                {"role": "system", "content": system_message},
-                {"role": "user", "content": user_prompt},
-            ],
-            temperature=0.4,
-        )
+        try:
+            response = self._client.chat.completions.create(
+                model=self.model_name,
+                messages=[
+                    {"role": "system", "content": system_message},
+                    {"role": "user", "content": user_prompt},
+                ],
+                temperature=0.4,
+            )
+        except Exception as exc:
+            raise RuntimeError(
+                f"OpenAI request failed. Check OPENAI_API_KEY and OPENAI_MODEL ({self.model_name})."
+            ) from exc
+
         content = (response.choices[0].message.content or "").strip()
         if not content:
             raise RuntimeError("OpenAI returned an empty recipe response.")

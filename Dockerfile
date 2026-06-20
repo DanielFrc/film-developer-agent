@@ -22,6 +22,9 @@ RUN mkdir -p /data/raw && chown -R appuser:appgroup /data
 # Copy application code and other data
 COPY . .
 
+# Install the package so film-api / film-agent console scripts are available
+RUN pip install --no-cache-dir -e .
+
 # Set correct ownership for application and data directories
 # This must be done after all files are copied
 RUN chown -R appuser:appgroup /app

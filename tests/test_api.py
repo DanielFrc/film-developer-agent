@@ -22,6 +22,25 @@ def test_health(api_client):
     assert response.json()["status"] == "ok"
 
 
+def test_cors_allows_vite_origin(api_client):
+    response = api_client.get(
+        "/health",
+        headers={"Origin": "http://localhost:5173"},
+    )
+    assert response.status_code == 200
+    assert response.headers.get("access-control-allow-origin") == "http://localhost:5173"
+
+
+def test_stats(api_client):
+    response = api_client.get("/stats")
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["films"] >= 1
+    assert payload["developers"] >= 1
+    assert payload["developing_time_combinations"] >= 1
+    assert payload["source"] == "DigitalTruth"
+
+
 def test_films_search(api_client):
     response = api_client.get("/films", params={"q": "hp5"})
     assert response.status_code == 200
@@ -78,3 +97,68 @@ def test_create_recipe_with_extra_context(api_client):
     assert response.status_code == 200
     assert response.json()["extra_context"] == "stand development, grainy look"
     assert response.json()["cached"] is False
+
+
+def test_explorer_schema_gold(api_client):
+    response = api_client.get("/explorer/schema", params={"layer": "gold"})
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["layer"] == "gold"
+    column_names = {column["name"] for column in payload["columns"]}
+    assert {"film", "developer", "iso", "dev_time"}.issubset(column_names)
+
+
+def test_explorer_data_gold_filtered(api_client):
+    response = api_client.get(
+        "/explorer/data",
+        params={
+            "layer": "gold",
+            "page": 1,
+            "page_size": 10,
+            "film": "hp5",
+            "iso": "400",
+        },
+    )
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["layer"] == "gold"
+    assert payload["page"] == 1
+    assert payload["page_size"] == 10
+    assert payload["total"] >= 1
+    assert payload["rows"]
+    assert "film" in payload["columns"]
+
+
+def test_explorer_invalid_layer(api_client):
+    response = api_client.get("/explorer/schema", params={"layer": "platinum"})
+    assert response.status_code == 400
+    assert "Invalid layer" in response.json()["detail"]
+
+
+class FailingLLMProvider:
+    provider_name = "failing"
+    model_name = "failing-v1"
+
+    def generate(self, *, system_message: str, user_prompt: str):
+        raise RuntimeError("Ollama request failed (403). Check OLLAMA_BASE_URL.")
+
+
+def test_create_recipe_llm_failure_returns_502(api_client, gold_dataset, tmp_path):
+    cache = RecipeCacheService(db_path=tmp_path / "api_recipes_fail.db")
+    service = RecipeService(cache=cache, llm_provider=FailingLLMProvider())
+    app.dependency_overrides[get_recipe_service] = lambda: service
+    client = TestClient(app)
+
+    body = {
+        "film": "Ilford HP5 Plus",
+        "developer": "Rodinal",
+        "format": "120",
+        "iso": "400",
+        "dilution": "1+50",
+    }
+    response = client.post("/recipes", json=body)
+
+    app.dependency_overrides.clear()
+
+    assert response.status_code == 502
+    assert "Ollama request failed" in response.json()["detail"]
