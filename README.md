@@ -46,6 +46,7 @@ film-developer-agent/
 ├── film_agent_cli/               # Typer CLI (`film-agent`)
 ├── film_agent_api/               # FastAPI (`film-api`)
 ├── film_llm/                     # Prompt templates, LLM providers, recipe cache
+├── apps/web/                     # React + Vite (Phase 5)
 ├── film_core/                    # Storage, manifests, pipeline, query layer
 ├── tests/                        # Pytest suite + HTML/JSON fixtures
 ├── logger/                       # Logging configuration
@@ -138,18 +139,73 @@ curl -X POST http://localhost:8000/recipes \
   -d '{"film":"Ilford HP5 Plus","developer":"Rodinal","format":"120","iso":"400","dilution":"1+50"}'
 ```
 
+Regenerate the committed OpenAPI contract after API changes:
+
+```bash
+python scripts/export_openapi.py
+```
+
+### Web UI scaffold (`apps/web`)
+
+Phase 5 frontend — typed API client, Vite proxy, CORS-enabled backend.
+
+```bash
+# Terminal 1 — API
+set -a && source .env && set +a
+film-api
+
+# Terminal 2 — Web
+cd apps/web
+cp .env.example .env
+npm install
+npm run dev
+```
+
+Open [http://localhost:5173](http://localhost:5173). The dev server proxies `/api` → `http://localhost:8000`.
+
+```bash
+# Optional: regenerate TS types from openapi.json
+npm run generate:api-types
+```
+
+**Docker Compose (API + web):**
+
+```bash
+docker compose up --build api web
+# Web UI: http://localhost:5173  ·  API: http://localhost:8000
+```
+
+Requires gold data under `./data/` (run `film-agent pipeline` locally first, or mount existing data).
+
+Optional production-style static UI on port 8080:
+
+```bash
+docker compose --profile prod up --build api web-prod
+```
+
+See [docs/PHASE5_INTERFACE.md](docs/PHASE5_INTERFACE.md) for the UI ↔ API contract.
+
 ### Environment variables
+
+Copy `.env.example` to `.env` and adjust for your setup:
+
+```bash
+cp .env.example .env
+set -a && source .env && set +a   # load before film-api / film-agent recipe
+```
 
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `DATA_PATH` | `data/` | Base directory for raw/processed data |
 | `LLM_PROVIDER` | `ollama` | `ollama`, `openai`, or `mock` (tests) |
 | `OLLAMA_BASE_URL` | `http://localhost:11434` | Ollama API base URL |
-| `OLLAMA_MODEL` | `llama3.1:8b` | Ollama model name |
+| `OLLAMA_MODEL` | `llama3.1:8b` | Ollama model name (must match `ollama list`) |
+| `OLLAMA_TIMEOUT` | `600` | Seconds to wait for Ollama (raise for large models like 70B) |
 | `OPENAI_API_KEY` | *(empty)* | Required when `LLM_PROVIDER=openai` |
 | `OPENAI_MODEL` | `gpt-4o-mini` | OpenAI model name |
 | `PROMPT_VERSION` | `2` | Bump to invalidate recipe cache |
 | `MAX_EXTRA_CONTEXT_LENGTH` | `500` | Max chars for photographer preferences |
+| `CORS_ORIGINS` | `http://localhost:5173,...` | Comma-separated origins for the web UI |
 | `MAX_WORKERS` | `10` | Parallel film fetches during scrape |
 | `SCRAPE_DELAY_MIN` | `0.5` | Min delay (seconds) between per-film requests |
 | `SCRAPE_DELAY_MAX` | `1.5` | Max delay (seconds) between per-film requests |
@@ -225,9 +281,11 @@ openai
 
 ## Next Steps
 
-Phases 1–4 are complete. Next up:
+Phase 5 is complete (web UI, API, LLM recipes, Docker Compose). Optional next work:
 
-- Phase 5: React web UI
+- **Phase 6** — AWS serverless deployment (see [docs/ROADMAP.md](docs/ROADMAP.md))
+- **OSS polish** — wire `GET /formats` in the search dropdown, explorer source filter
+- **Legal** — optional contact with DigitalTruth before a high-visibility launch
 
 See [docs/ROADMAP.md](docs/ROADMAP.md) for the full plan.
 

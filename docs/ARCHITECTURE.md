@@ -266,8 +266,53 @@ In Docker, `DATA_PATH=/data` and the `data/` directory is mounted as a volume.
 
 | File | Purpose |
 |------|---------|
-| `Dockerfile` | Python 3.13-slim, non-root `appuser`, runs `entrypoint.py` |
-| `compose.yml` | Single `etl` service, mounts `./data:/data` |
+| `Dockerfile` | Python 3.13-slim, non-root `appuser`, installs package with `pip install -e .` |
+| `compose.yml` | `etl` (pipeline), `api` (`film-api`), `web` (Vite dev), optional `web-prod` (nginx) |
+
+### Compose services
+
+| Service | Command | Port |
+|---------|---------|------|
+| `etl` | `python entrypoint.py` | — |
+| `api` | `film-api` | 8000 |
+| `web` | Vite dev server | 5173 |
+| `web-prod` (profile) | nginx static + `/api` proxy | 8080 |
+
+Requires `./data` with gold parquet for API/web. Run the pipeline locally first or use the `etl` service.
+
+---
+
+## Application layers (Phases 3–5)
+
+```mermaid
+flowchart LR
+    GOLD[data/normalized gold parquet]
+    CLI[film-agent CLI]
+    API[film-api FastAPI]
+    LLM[film_llm RecipeService]
+    WEB[apps/web React UI]
+
+    GOLD --> CLI
+    GOLD --> API
+    API --> LLM
+    WEB --> API
+```
+
+| Layer | Package | Responsibility |
+|-------|---------|----------------|
+| Query | `film_core/query/` | DuckDB over gold parquet — search, lookup, explorer |
+| CLI | `film_agent_cli/` | Typer commands for pipeline, search, lookup, recipe |
+| API | `film_agent_api/` | REST endpoints, CORS, Pydantic schemas |
+| LLM | `film_llm/` | Jinja2 prompts, Ollama/OpenAI providers, SQLite recipe cache |
+| Web | `apps/web/` | React + Vite + Tailwind — dashboard, search, recipe, explorer |
+
+---
+
+## Testing
+
+- **45+ pytest tests** under `tests/` — pipeline, query, API, CLI, LLM, scraper fixtures
+- CI: `.github/workflows/ci.yml` — ruff + pytest + web build
+- Tests use isolated fixtures; no committed scrape data
 
 ---
 
@@ -275,12 +320,11 @@ In Docker, `DATA_PATH=/data` and the `data/` directory is mounted as a volume.
 
 | Area | Status |
 |------|--------|
-| API layer | Planned |
-| LLM recipe generation | `prompt.txt` is a template only |
-| Automated tests | None |
-| AWS / Terraform / S3 | Docker-only; `.cursorrules` targets future stages |
-| Data validation framework | No pydantic / Great Expectations |
-| Additional scrapers | Planned |
+| AWS / Terraform / S3 | Deferred (Phase 6) |
+| Multi-source scrapers | Planned |
+| User accounts / auth | Out of scope for MVP |
+| Data validation framework | No pydantic / Great Expectations on pipeline rows |
+| Explorer source filter in UI | API filters film/developer/ISO only |
 
 ---
 
@@ -293,14 +337,3 @@ In Docker, `DATA_PATH=/data` and the `data/` directory is mounted as a volume.
 **Why melt wide → long?** One row per (film, developer, format, iso, dilution) is easier to query and join than wide columns.
 
 **Why gzip Parquet?** Columnar, compressed, schema-enforced — standard for analytics and downstream ML/API use.
-
----
-
-## Suggested Next Steps (for planning)
-
-1. **API layer** — FastAPI over Parquet (or load into DuckDB/SQLite).
-2. **LLM integration** — Use `prompt.txt` + normalized data to generate recipes.
-3. **Cloud storage** — S3 raw/processed zones with Terraform (fits `.cursorrules` goals).
-4. **Orchestration** — EventBridge + Lambda, or Step Functions, instead of cron + Docker.
-5. **Data quality** — Schema validation, row-count checks, FK integrity tests.
-6. **Rename `scrapper` → `scraper`** — Cosmetic but improves consistency (breaking change).

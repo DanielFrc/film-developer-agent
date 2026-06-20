@@ -15,6 +15,7 @@ downloads/
 eggs/
 .eggs/
 lib/
+!apps/web/src/lib/
 lib64/
 parts/
 sdist/
@@ -126,6 +127,7 @@ data/cache/**
 
 .direnv
 .envrc
+.env
 # Local tool configs (keep pyproject.toml tracked)
 pyrightconfig.toml
 ruff.toml

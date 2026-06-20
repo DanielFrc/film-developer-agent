@@ -30,3 +30,22 @@ jobs:
 
       - name: Pytest
         run: pytest -q
+
+  web:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+
+      - name: Install and build web
+        working-directory: apps/web
+        run: |
+          npm ci
+          npm run build

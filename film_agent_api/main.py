@@ -1,7 +1,12 @@
 from fastapi import Depends, FastAPI, HTTPException, Query
+from fastapi.middleware.cors import CORSMiddleware
 
+from film_agent_api.cors import get_cors_origins
 from film_agent_api.schemas import (
+    DatasetStatsResponse,
     DevelopingTimeItem,
+    ExplorerDataResponse,
+    ExplorerSchemaResponse,
     FormatItem,
     HealthResponse,
     RecipeLookupItem,
@@ -17,11 +22,20 @@ from film_core.query import (
 )
 from film_core.query.gold_store import GoldDataNotFoundError
 from film_llm.service import RecipeAmbiguousError, RecipeLookupError, RecipeService
+from film_llm.source_hash import compute_source_hash
 
 app = FastAPI(
     title="Film Developer Agent API",
     description="Query gold developing times and generate LLM recipes.",
     version="0.1.0",
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=get_cors_origins(),
+    allow_credentials=True,
+    allow_methods=["GET", "POST", "OPTIONS"],
+    allow_headers=["*"],
 )
 
 
@@ -32,6 +46,26 @@ def get_recipe_service() -> RecipeService:
 @app.get("/health", response_model=HealthResponse)
 def health() -> HealthResponse:
     return HealthResponse()
+
+
+@app.get("/stats", response_model=DatasetStatsResponse)
+def get_dataset_stats() -> DatasetStatsResponse:
+    try:
+        with GoldStore() as store:
+            films = len(store.fetch_all_films())
+            developers = len(store.fetch_all_developers())
+            combinations = store.connection.execute(
+                "SELECT COUNT(*) FROM developing_times WHERE active = true"
+            ).fetchone()[0]
+    except GoldDataNotFoundError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+
+    return DatasetStatsResponse(
+        films=films,
+        developers=developers,
+        developing_time_combinations=combinations,
+        source_hash=compute_source_hash(),
+    )
 
 
 @app.get("/films", response_model=list[SearchResultItem])
@@ -107,6 +141,59 @@ def get_developing_times(
         )
 
     return [DevelopingTimeItem(**match.to_dict()) for match in matches]
+
+
+VALID_EXPLORER_LAYERS = {"bronze", "silver", "gold"}
+
+
+@app.get("/explorer/schema", response_model=ExplorerSchemaResponse)
+def get_explorer_schema(
+    layer: str = Query(..., description="bronze, silver, or gold"),
+) -> ExplorerSchemaResponse:
+    from film_core.query.explorer import ExplorerDataNotFoundError, get_layer_schema
+
+    if layer not in VALID_EXPLORER_LAYERS:
+        raise HTTPException(status_code=400, detail=f"Invalid layer: {layer}")
+
+    try:
+        columns = get_layer_schema(layer)
+    except ExplorerDataNotFoundError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+    return ExplorerSchemaResponse(layer=layer, columns=columns)
+
+
+@app.get("/explorer/data", response_model=ExplorerDataResponse)
+def get_explorer_data(
+    layer: str = Query(...),
+    page: int = Query(1, ge=1),
+    page_size: int = Query(25, ge=1, le=100),
+    film: str | None = Query(None),
+    developer: str | None = Query(None),
+    iso: str | None = Query(None),
+) -> ExplorerDataResponse:
+    from film_core.query.explorer import ExplorerDataNotFoundError, query_layer
+
+    if layer not in VALID_EXPLORER_LAYERS:
+        raise HTTPException(status_code=400, detail=f"Invalid layer: {layer}")
+
+    try:
+        payload = query_layer(
+            layer,
+            page=page,
+            page_size=page_size,
+            film=film,
+            developer=developer,
+            iso=iso,
+        )
+    except ExplorerDataNotFoundError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+    return ExplorerDataResponse(**payload)
 
 
 @app.post("/recipes", response_model=RecipeResponse)

@@ -158,12 +158,12 @@ This project is not affiliated with Digitaltruth Photo Ltd.
 
 ## Checklist Before Public Launch
 
-- [ ] Choose OSS license (MIT / Apache-2.0)
-- [ ] Add `LICENSE`, `NOTICE`, and attribution in README
+- [x] Choose OSS license (MIT / Apache-2.0)
+- [x] Add `LICENSE`, `NOTICE`, and attribution in README
 - [x] Remove bulk scraped data from git (`data/` gitignored)
 - [x] Keep curated format catalog in `catalogs/`
-- [ ] Document "run scraper yourself" in README and CLI help
-- [ ] Recipe API returns source attribution + disclaimer
+- [x] Document "run scraper yourself" in README and CLI help
+- [x] Recipe API returns source attribution + disclaimer
 - [ ] Confirm `ai-train=no` policy in contributor guidelines (no training datasets from DT exports)
 - [ ] (Optional) Email DigitalTruth for goodwill / permission
 - [ ] (Optional) Lawyer review if you monetize hosting or sell a SaaS

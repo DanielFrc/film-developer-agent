@@ -1,8 +1,18 @@
+from typing import Any
+
 from pydantic import BaseModel
 
 
 class HealthResponse(BaseModel):
     status: str = "ok"
+
+
+class DatasetStatsResponse(BaseModel):
+    films: int
+    developers: int
+    developing_time_combinations: int
+    source: str = "DigitalTruth"
+    source_hash: str | None = None
 
 
 class SearchResultItem(BaseModel):
@@ -67,3 +77,22 @@ class RecipeResponse(BaseModel):
 
 class ErrorResponse(BaseModel):
     detail: str
+
+
+class ExplorerColumnSchema(BaseModel):
+    name: str
+    type: str
+
+
+class ExplorerSchemaResponse(BaseModel):
+    layer: str
+    columns: list[ExplorerColumnSchema]
+
+
+class ExplorerDataResponse(BaseModel):
+    layer: str
+    rows: list[dict[str, Any]]
+    total: int
+    page: int
+    page_size: int
+    columns: list[str]

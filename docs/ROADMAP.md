@@ -378,7 +378,7 @@ film-developer-agent/
 │   ├── ARCHITECTURE.md
 │   └── ROADMAP.md                     # this file
 │
-├── docker-compose.yml                 # full local stack
+├── compose.yml                        # full local stack (etl, api, web)
 ├── Dockerfile
 └── pyproject.toml                     # monorepo / workspace (future)
 ```
@@ -466,18 +466,30 @@ Migration can be **incremental** — no big-bang rewrite. Wrap existing modules 
 
 ---
 
-### Phase 5 — Web UI (2–3 weeks)
+### Phase 5 — Web UI ✅
 
-**Goal:** Browser access to lookup + recipe (your item #5 — web).
+**Goal:** Browser access to lookup + recipe per [`.interfacerules`](.interfacerules).
+
+**Plan:** [PHASE5_SCREENS.md](PHASE5_SCREENS.md) · [PHASE5_INTERFACE.md](PHASE5_INTERFACE.md)
+
+| Iteration | Screens | Status |
+|-----------|---------|--------|
+| Prep | CORS, OpenAPI, scaffold, Tailwind | Done |
+| 1 | Dashboard, routing, layout | Done |
+| 2 | Search + lookup results | Done |
+| 3 | Recipe detail + generate | Done |
+| 4 | Data Explorer (+ API) | Done |
 
 | Task | Deliverable |
 |------|-------------|
-| React + Vite frontend | Search + recipe form in `apps/web/` |
-| Docker Compose services `api` + `web` | Full local stack |
-| Recipe markdown rendering | Print-friendly CSS |
-| Cached recipe UX | Show `Cached` badge; **Regenerate** → `force_regenerate` |
+| React + Vite + Tailwind in `apps/web/` | Routing, autumn theme |
+| `GET /stats` | Dashboard cards |
+| Search + recipe screens | Per iteration plan |
+| Docker Compose `api` + `web` | Local stack |
+| API error UX (404/409/502/503) | Contextual hints in UI |
+| `OLLAMA_TIMEOUT` | Configurable wait for large models |
 
-**Exit criteria:** User can generate a recipe in the browser against local API; repeat lookup uses cache unless regenerated.
+**Exit criteria:** User can generate a recipe in the browser; repeat lookup uses cache unless regenerated.
 
 ---
 
@@ -575,7 +587,9 @@ Migration can be **incremental** — no big-bang rewrite. Wrap existing modules 
 
 ## Suggested Immediate Next Session
 
-Start with **Phase 5** (React web UI): search + lookup + recipe form calling the FastAPI backend.
+**Phase 6 (optional):** AWS serverless deployment — S3 medallion, hosted API.
+
+Phase 5 is complete. See [PHASE5_SCREENS.md](PHASE5_SCREENS.md) and [PHASE5_INTERFACE.md](PHASE5_INTERFACE.md).
 
 ---
 
