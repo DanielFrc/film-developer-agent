@@ -164,7 +164,7 @@ This project is not affiliated with Digitaltruth Photo Ltd.
 - [x] Keep curated format catalog in `catalogs/`
 - [x] Document "run scraper yourself" in README and CLI help
 - [x] Recipe API returns source attribution + disclaimer
-- [ ] Confirm `ai-train=no` policy in contributor guidelines (no training datasets from DT exports)
+- [x] Confirm `ai-train=no` policy in contributor guidelines (see [CONTRIBUTING.md](../CONTRIBUTING.md))
 - [ ] (Optional) Email DigitalTruth for goodwill / permission
 - [ ] (Optional) Lawyer review if you monetize hosting or sell a SaaS
 

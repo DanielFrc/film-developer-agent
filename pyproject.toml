@@ -5,9 +5,35 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "film-developer-agent"
 version = "0.1.0"
-description = "ETL pipeline and tools for film development data from DigitalTruth"
+description = "Local-first medallion ETL, API, and LLM recipe assistant for film development data"
 readme = "README.md"
 requires-python = ">=3.13"
+license = "MIT"
+authors = [{ name = "Marcos Franco" }]
+keywords = [
+    "data-engineering",
+    "etl",
+    "parquet",
+    "duckdb",
+    "fastapi",
+    "llm",
+    "film-photography",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Scientific/Engineering",
+    "Typing :: Typed",
+]
+
+[project.urls]
+Homepage = "https://github.com/DanielFrc/film-developer-agent"
+Documentation = "https://github.com/DanielFrc/film-developer-agent/blob/main/docs/QUICKSTART.md"
+Repository = "https://github.com/DanielFrc/film-developer-agent"
+Issues = "https://github.com/DanielFrc/film-developer-agent/issues"
+Changelog = "https://github.com/DanielFrc/film-developer-agent/blob/main/CHANGELOG.md"
 dependencies = [
     "beautifulsoup4>=4.13.4",
     "requests>=2.32.4",

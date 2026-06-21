@@ -40,7 +40,7 @@ OpenAPI: `GET /openapi.json` · Swagger UI: `GET /docs`
 | `GET` | `/developing-times?film=&developer=&format=&iso=&dilution=` | Exact lookup | Results panel |
 | `POST` | `/recipes` | Generate / cache recipe | Recipe page |
 | `GET` | `/explorer/schema?layer=` | Column schema per layer | Explorer schema panel |
-| `GET` | `/explorer/data?layer=&page=&page_size=&film=&developer=&iso=` | Paginated layer rows | Explorer table + CSV |
+| `GET` | `/explorer/data?layer=&page=&page_size=&film=&developer=&iso=&source=` | Paginated layer rows | Explorer table + CSV |
 
 ### Request / response types
 

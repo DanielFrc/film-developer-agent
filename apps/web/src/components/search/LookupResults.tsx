@@ -15,6 +15,8 @@ interface LookupResultsProps {
   onSelectDilution: (dilution: string) => void;
   onConfirmMatch: (match: DevelopingTimeItem) => void;
   onGenerateRecipe?: () => void;
+  onSaveCombination?: () => void;
+  pushPullHint?: string | null;
 }
 
 const confidenceTone = {
@@ -31,6 +33,8 @@ export function LookupResults({
   onSelectDilution,
   onConfirmMatch,
   onGenerateRecipe,
+  onSaveCombination,
+  pushPullHint,
 }: LookupResultsProps) {
   if (!matches.length) {
     return null;
@@ -119,6 +123,12 @@ export function LookupResults({
             </div>
           </dl>
 
+          {pushPullHint ? (
+            <div className="rounded-lg border border-accent/20 bg-accent-soft/40 px-4 py-3 text-sm text-ink">
+              {pushPullHint}
+            </div>
+          ) : null}
+
           {result.match.notes ? (
             <div>
               <h3 className="text-xs font-semibold uppercase tracking-wide text-muted">Notes</h3>
@@ -151,11 +161,18 @@ export function LookupResults({
             </a>
           </p>
 
-          {onGenerateRecipe ? (
-            <Button type="button" onClick={onGenerateRecipe}>
-              Generate recipe
-            </Button>
-          ) : null}
+          <div className="flex flex-wrap gap-3">
+            {onSaveCombination ? (
+              <Button type="button" variant="secondary" onClick={onSaveCombination}>
+                Save combination
+              </Button>
+            ) : null}
+            {onGenerateRecipe ? (
+              <Button type="button" onClick={onGenerateRecipe}>
+                Generate recipe
+              </Button>
+            ) : null}
+          </div>
         </div>
       ) : null}
     </Card>

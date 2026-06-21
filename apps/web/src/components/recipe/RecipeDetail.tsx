@@ -8,8 +8,10 @@ import { RecipeMetadata } from "./RecipeMetadata";
 interface RecipeDetailProps {
   response: RecipeResponse;
   loading?: boolean;
-  onRegenerate: () => void;
+  onRegenerate?: () => void;
   onPrint: () => void;
+  onSaveRecipe?: () => void;
+  onSetDefault?: () => void;
 }
 
 export function RecipeDetail({
@@ -17,6 +19,8 @@ export function RecipeDetail({
   loading = false,
   onRegenerate,
   onPrint,
+  onSaveRecipe,
+  onSetDefault,
 }: RecipeDetailProps) {
   const [copied, setCopied] = useState(false);
 
@@ -43,9 +47,21 @@ export function RecipeDetail({
         <Button type="button" variant="secondary" onClick={onPrint}>
           Print
         </Button>
-        <Button type="button" onClick={onRegenerate} disabled={loading}>
-          {loading ? "Regenerating…" : "Regenerate"}
-        </Button>
+        {onSaveRecipe ? (
+          <Button type="button" variant="secondary" onClick={onSaveRecipe}>
+            Save recipe
+          </Button>
+        ) : null}
+        {onSetDefault ? (
+          <Button type="button" variant="secondary" onClick={onSetDefault}>
+            Set as default
+          </Button>
+        ) : null}
+        {onRegenerate ? (
+          <Button type="button" onClick={onRegenerate} disabled={loading}>
+            {loading ? "Regenerating…" : "Regenerate"}
+          </Button>
+        ) : null}
       </div>
     </div>
   );

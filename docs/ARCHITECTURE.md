@@ -324,7 +324,7 @@ flowchart LR
 | Multi-source scrapers | Planned |
 | User accounts / auth | Out of scope for MVP |
 | Data validation framework | No pydantic / Great Expectations on pipeline rows |
-| Explorer source filter in UI | API filters film/developer/ISO only |
+| Explorer source filter in UI | API + UI — applies when layer schema has `source` column |
 
 ---
 
