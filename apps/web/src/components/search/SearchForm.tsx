@@ -1,6 +1,5 @@
 import type { FormEvent } from "react";
-import type { SearchFormValues, ScrapedFormat } from "../../api/types";
-import { SCRAPED_FORMATS } from "../../api/types";
+import type { FormatItem, SearchFormValues, ScrapedFormat } from "../../api/types";
 import { COMMON_ISO_VALUES } from "../../lib/constants";
 import { Button } from "../ui/Button";
 import { FormField, selectClassName, textareaClassName } from "../ui/FormField";
@@ -9,12 +8,28 @@ import { DeveloperAutocomplete } from "./DeveloperAutocomplete";
 
 interface SearchFormProps {
   values: SearchFormValues;
+  formats: FormatItem[];
+  formatsLoading?: boolean;
   loading: boolean;
   onChange: (patch: Partial<SearchFormValues>) => void;
   onSubmit: () => void;
 }
 
-export function SearchForm({ values, loading, onChange, onSubmit }: SearchFormProps) {
+function formatLabel(item: FormatItem): string {
+  if (item.description) {
+    return `${item.format} — ${item.description}`;
+  }
+  return item.format;
+}
+
+export function SearchForm({
+  values,
+  formats,
+  formatsLoading = false,
+  loading,
+  onChange,
+  onSubmit,
+}: SearchFormProps) {
   function handleSubmit(event: FormEvent) {
     event.preventDefault();
     onSubmit();
@@ -89,13 +104,17 @@ export function SearchForm({ values, loading, onChange, onSubmit }: SearchFormPr
             value={values.format}
             onChange={(e) => onChange({ format: e.target.value as ScrapedFormat })}
             className={selectClassName}
+            disabled={formatsLoading}
           >
-            {SCRAPED_FORMATS.map((format) => (
-              <option key={format} value={format}>
-                {format}
+            {formats.map((item) => (
+              <option key={item.format} value={item.format}>
+                {formatLabel(item)}
               </option>
             ))}
           </select>
+          <span className="mt-1 block text-xs text-muted">
+            {formatsLoading ? "Loading formats from API…" : "From gold format catalog (scraped formats only)."}
+          </span>
         </label>
         <label className="block">
           <span className="mb-1 block text-sm font-medium text-ink">Temperature unit</span>
@@ -121,7 +140,7 @@ export function SearchForm({ values, loading, onChange, onSubmit }: SearchFormPr
       <div className="grid gap-5 lg:grid-cols-2">
         <FormField
           label="Agitation method"
-          hint="Optional — included in recipe extra context (iteration 3)."
+          hint="Optional — included in recipe extra context."
           value={values.agitationMethod}
           onChange={(e) => onChange({ agitationMethod: e.target.value })}
           placeholder="e.g. stand development, 30s every minute"

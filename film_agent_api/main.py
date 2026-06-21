@@ -5,6 +5,7 @@ from film_agent_api.cors import get_cors_origins
 from film_agent_api.schemas import (
     DatasetStatsResponse,
     DevelopingTimeItem,
+    ExplorerCatalogResponse,
     ExplorerDataResponse,
     ExplorerSchemaResponse,
     FormatItem,
@@ -144,6 +145,30 @@ def get_developing_times(
 
 
 VALID_EXPLORER_LAYERS = {"bronze", "silver", "gold"}
+VALID_EXPLORER_CATALOGS = {"films", "developers"}
+
+
+@app.get("/explorer/catalog", response_model=ExplorerCatalogResponse)
+def get_explorer_catalog(
+    catalog: str = Query(..., description="films or developers"),
+    page: int = Query(1, ge=1),
+    page_size: int = Query(25, ge=1, le=100),
+    q: str | None = Query(None),
+) -> ExplorerCatalogResponse:
+    from film_core.query.catalog import query_catalog
+    from film_core.query.explorer import ExplorerDataNotFoundError
+
+    if catalog not in VALID_EXPLORER_CATALOGS:
+        raise HTTPException(status_code=400, detail=f"Invalid catalog: {catalog}")
+
+    try:
+        payload = query_catalog(catalog, page=page, page_size=page_size, q=q)
+    except ExplorerDataNotFoundError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+    return ExplorerCatalogResponse(**payload)
 
 
 @app.get("/explorer/schema", response_model=ExplorerSchemaResponse)
@@ -173,6 +198,7 @@ def get_explorer_data(
     film: str | None = Query(None),
     developer: str | None = Query(None),
     iso: str | None = Query(None),
+    source: str | None = Query(None, description="Filter by source column when present"),
 ) -> ExplorerDataResponse:
     from film_core.query.explorer import ExplorerDataNotFoundError, query_layer
 
@@ -187,6 +213,7 @@ def get_explorer_data(
             film=film,
             developer=developer,
             iso=iso,
+            source=source,
         )
     except ExplorerDataNotFoundError as exc:
         raise HTTPException(status_code=503, detail=str(exc)) from exc

@@ -266,6 +266,86 @@
         }
       }
     },
+    "/explorer/catalog": {
+      "get": {
+        "summary": "Get Explorer Catalog",
+        "operationId": "get_explorer_catalog_explorer_catalog_get",
+        "parameters": [
+          {
+            "name": "catalog",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "films or developers",
+              "title": "Catalog"
+            },
+            "description": "films or developers"
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1,
+              "title": "Page"
+            }
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 25,
+              "title": "Page Size"
+            }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Q"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExplorerCatalogResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/explorer/schema": {
       "get": {
         "summary": "Get Explorer Schema",
@@ -391,6 +471,24 @@
               ],
               "title": "Iso"
             }
+          },
+          {
+            "name": "source",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by source column when present",
+              "title": "Source"
+            },
+            "description": "Filter by source column when present"
           }
         ],
         "responses": {
@@ -596,6 +694,51 @@
         ],
         "title": "DevelopingTimeItem"
       },
+      "ExplorerCatalogResponse": {
+        "properties": {
+          "catalog": {
+            "type": "string",
+            "title": "Catalog"
+          },
+          "rows": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Rows"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "page": {
+            "type": "integer",
+            "title": "Page"
+          },
+          "page_size": {
+            "type": "integer",
+            "title": "Page Size"
+          },
+          "columns": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Columns"
+          }
+        },
+        "type": "object",
+        "required": [
+          "catalog",
+          "rows",
+          "total",
+          "page",
+          "page_size",
+          "columns"
+        ],
+        "title": "ExplorerCatalogResponse"
+      },
       "ExplorerColumnSchema": {
         "properties": {
           "name": {
@@ -646,6 +789,11 @@
             },
             "type": "array",
             "title": "Columns"
+          },
+          "source_filter_applied": {
+            "type": "boolean",
+            "title": "Source Filter Applied",
+            "default": false
           }
         },
         "type": "object",

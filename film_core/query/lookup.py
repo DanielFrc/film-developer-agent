@@ -1,7 +1,7 @@
 from dataclasses import asdict, dataclass
 from typing import Any
 
-from film_core.normalize import normalize_value
+from film_core.normalize import normalize_value, sanitize_notes
 from film_core.query.gold_store import GoldStore
 
 
@@ -76,7 +76,7 @@ def lookup_developing_times(
             dilution=row[4],
             dev_time=str(row[5]),
             temp=row[6],
-            notes=row[7],
+            notes=sanitize_notes(row[7]),
             film_id=row[8],
             developer_id=row[9],
             format_id=row[10],

@@ -1,294 +1,173 @@
-# Film Developer Agent — Data Engineering Stage
+# Film Developer Agent
 
-ETL pipeline that scrapes film development data from [DigitalTruth](https://www.digitaltruth.com/devchart.php), stores raw JSON, and produces normalized Parquet tables for films, developers, formats, and developing times.
+[![CI](https://github.com/DanielFrc/film-developer-agent/actions/workflows/ci.yml/badge.svg)](https://github.com/DanielFrc/film-developer-agent/actions/workflows/ci.yml)
+[![Python 3.13+](https://img.shields.io/badge/python-3.13+-blue.svg)](https://www.python.org/downloads/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-For architecture details, data model, and design decisions, see [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).  
-For the product roadmap and phased plan, see [docs/ROADMAP.md](docs/ROADMAP.md).  
-For open-source and DigitalTruth legal considerations, see [docs/LEGAL.md](docs/LEGAL.md).
+Local-first **medallion ETL pipeline** and **LLM-assisted darkroom assistant**: scrape DigitalTruth → Parquet gold layer → DuckDB queries → FastAPI + React UI → step-by-step development recipes anchored to real chart times.
 
----
+> **Portfolio / learning project** — demonstrates batch ingestion, star-schema modeling, serverless-ready API boundaries, and RAG-style LLM prompts. Not affiliated with Digitaltruth Photo Ltd. See [docs/LEGAL.md](docs/LEGAL.md).
 
-## What It Does
-
-1. **Scrape** — Fetches film/developer catalogs and per-film development time tables from DigitalTruth.
-2. **Process (silver)** — Cleans and types bronze JSON into wide Parquet under `data/processed/`.
-3. **Normalize (gold)** — Builds star-schema Parquet with FKs under `data/normalized/` for API/CLI use.
+**Quick start:** [docs/QUICKSTART.md](docs/QUICKSTART.md) · **Interview demo:** [docs/PORTFOLIO.md](docs/PORTFOLIO.md)
 
 ---
 
-## Output Tables
+## Highlights
 
-**Silver** (`data/processed/`) — wide developing-times table (`35mm`, `120`, `sheet` columns).
+| Area | What it shows |
+|------|----------------|
+| **Medallion lakehouse** | Bronze JSON → silver parquet → gold star schema with manifests |
+| **Query layer** | DuckDB in-process over parquet; rapidfuzz search |
+| **API** | FastAPI, OpenAPI, structured errors (404/409/502/503) |
+| **LLM** | Jinja2 prompts, Ollama/OpenAI, SQLite cache + `source_hash` invalidation |
+| **Web UI** | React + Vite — search, recipes, explorer, personal library |
+| **Ops** | Docker Compose, GitHub Actions CI, `make check` |
 
-**Gold** (`data/normalized/`) — API-ready star schema:
+```mermaid
+flowchart LR
+    subgraph batch [Batch ETL — CLI]
+        S[Scrape] --> B[Bronze JSON]
+        B --> P[Silver Parquet]
+        P --> G[Gold Parquet]
+    end
 
-| Parquet file | Description |
-|--------------|-------------|
-| `digitaltruth_films.parquet.gz` | Film stocks (dimension) |
-| `digitaltruth_developers.parquet.gz` | Developers (dimension) |
-| `digitaltruth_formats.parquet.gz` | Film formats (dimension) |
-| `digitaltruth_film_data.parquet.gz` | Developing times — long fact table with FKs |
+    subgraph app [Application]
+        G --> Q[DuckDB]
+        Q --> API[FastAPI]
+        API --> LLM[LLM]
+        API --> WEB[React UI]
+    end
+```
 
 ---
 
-## Project Structure
+## Features
+
+- **Pipeline** — `film-agent pipeline` with optional `--skip-scrape`; run manifests under `data/manifests/`
+- **Lookup** — film + developer + format + ISO + dilution from normalized gold data
+- **Recipes** — LLM generates a 12-section markdown recipe; base developing time never invented by the model
+- **Cache** — repeat identical lookups skip the LLM (`cached: true`)
+- **Explorer** — browse bronze/silver/gold; film/developer catalog views
+- **Personal library** — saved combinations, recipes, defaults, favorites, global + per-film preferences (browser `localStorage`)
+
+---
+
+## Tech stack
+
+| Layer | Tools |
+|-------|--------|
+| ETL | Python, BeautifulSoup, pandas, pyarrow |
+| Storage | Local parquet (S3-ready abstraction in `film_core`) |
+| Query | DuckDB, rapidfuzz |
+| API | FastAPI, Uvicorn |
+| LLM | Ollama (local), OpenAI (optional), Jinja2 |
+| Web | React 19, Vite, Tailwind CSS 4, TypeScript |
+| Quality | pytest, Ruff, GitHub Actions |
+
+---
+
+## Quick start
+
+```bash
+git clone git@github.com:DanielFrc/film-developer-agent.git
+cd film-developer-agent
+
+python -m venv .venv && source .venv/bin/activate
+pip install -e ".[dev]"
+cp .env.example .env
+
+film-agent pipeline          # first time — builds gold data (network)
+./scripts/dev.sh             # API :8000 + UI :5173
+```
+
+Full paths (CLI-only, Docker, LLM setup, troubleshooting): **[docs/QUICKSTART.md](docs/QUICKSTART.md)**
+
+```bash
+make check    # ruff + pytest + web build (same as CI)
+```
+
+---
+
+## CLI examples
+
+```bash
+film-agent films search "hp5"
+film-agent times lookup \
+  --film "Ilford HP5 Plus" --developer "Rodinal" \
+  --format 120 --iso 400 --dilution "1+50"
+
+film-agent recipe \
+  --film "Ilford HP5 Plus" --developer "Rodinal" \
+  --format 120 --iso 400 --dilution "1+50" \
+  --output recipe.md
+```
+
+---
+
+## Project structure
 
 ```
 film-developer-agent/
-├── entrypoint.py                 # Runs full pipeline + manifest
-├── config.py                     # Paths, URLs, scrape tuning
-├── catalogs/                     # Curated seed catalogs (film formats)
-├── data/                         # Local pipeline output (gitignored)
-├── digitaltruth_scrapper/        # Stage 1: bronze scrape
-├── digitaltruth_processor/       # Stage 2: silver parquet
-├── digitaltruth_normalizer/      # Stage 3: gold parquet
-├── digitaltruth_transformer/     # Backward-compatible alias (process + normalize)
-├── film_agent_cli/               # Typer CLI (`film-agent`)
-├── film_agent_api/               # FastAPI (`film-api`)
-├── film_llm/                     # Prompt templates, LLM providers, recipe cache
-├── apps/web/                     # React + Vite (Phase 5)
-├── film_core/                    # Storage, manifests, pipeline, query layer
-├── tests/                        # Pytest suite + HTML/JSON fixtures
-├── logger/                       # Logging configuration
-├── docs/
-├── Dockerfile
-├── compose.yml
-├── pyproject.toml
-└── requirements.txt
+├── digitaltruth_scrapper/     # Bronze scrape
+├── digitaltruth_processor/    # Silver parquet
+├── digitaltruth_normalizer/   # Gold star schema
+├── film_core/                 # Pipeline, manifests, DuckDB query layer
+├── film_agent_cli/            # Typer CLI (`film-agent`)
+├── film_agent_api/            # FastAPI (`film-api`)
+├── film_llm/                  # Prompts, providers, recipe cache
+├── apps/web/                  # React UI
+├── tests/                     # Pytest + fixtures (no live scrape in CI)
+├── docs/                      # Architecture, roadmap, quickstart, legal
+├── scripts/dev.sh             # Start API + web dev servers
+├── compose.yml                # Docker: etl, api, web
+└── pyproject.toml
 ```
+
+Gold output (`data/normalized/`) is **gitignored** — run the pipeline locally. Tests use `tests/fixtures/`.
 
 ---
 
-## Quickstart
+## Documentation
 
-### Prerequisites
+| Document | Purpose |
+|----------|---------|
+| [QUICKSTART.md](docs/QUICKSTART.md) | Setup: CLI, local UI, Docker |
+| [PORTFOLIO.md](docs/PORTFOLIO.md) | Demo script & interview talking points |
+| [ARCHITECTURE.md](docs/ARCHITECTURE.md) | Pipeline & data model deep dive |
+| [ROADMAP.md](docs/ROADMAP.md) | Phased delivery (Phases 0–5.2 complete) |
+| [LEGAL.md](docs/LEGAL.md) | DigitalTruth attribution & OSS boundaries |
+| [CONTRIBUTING.md](CONTRIBUTING.md) | How to contribute |
+| [CHANGELOG.md](CHANGELOG.md) | Release history |
 
-- Python 3.13+
-- Docker & Docker Compose (optional)
+---
 
-### Run locally
-
-```bash
-python -m venv .venv
-source .venv/bin/activate   # Windows: .venv\Scripts\activate
-pip install -e ".[dev]"
-python entrypoint.py
-```
-
-Output is written under `./data/processed/` and `./data/normalized/`. A run manifest is saved under `./data/manifests/`. Logs go to `./logs/`.
-
-Run stages independently:
-
-```bash
-python digitaltruth_scrapper/digitaltruth_scrapper_job.py
-python digitaltruth_processor/processor_job.py
-python digitaltruth_normalizer/normalizer_job.py
-```
-
-### CLI (`film-agent`)
-
-After installing with `pip install -e ".[dev]"`, query gold data without re-running the scraper:
-
-```bash
-# Pipeline stages
-film-agent scrape
-film-agent process
-film-agent normalize
-film-agent pipeline              # all three stages
-film-agent pipeline --skip-scrape  # process + normalize only
-
-# Fuzzy search (rapidfuzz over gold dimensions)
-film-agent films search "hp5"
-film-agent developers search "rodinal"
-
-# Developing time lookup (gold fact table)
-film-agent times lookup \
-  --film "Ilford HP5 Plus" \
-  --developer "Rodinal" \
-  --format 120 \
-  --iso 400
-
-# JSON output for scripting
-film-agent times lookup --film "hp5" --developer "rodinal" --format 120 --iso 400 --json
-
-# Recipe generation (LLM + SQLite cache)
-film-agent recipe \
-  --film "Ilford HP5 Plus" \
-  --developer "Rodinal" \
-  --format 120 \
-  --iso 400 \
-  --dilution "1+50" \
-  --extra-context "stand development, grainy look" \
-  --output recipe.md
-
-film-agent recipe ... --force   # bypass cache
-```
-
-Names are normalized to lowercase in gold data; the CLI accepts mixed case. Run `process` + `normalize` (or `pipeline --skip-scrape`) at least once so `data/normalized/` exists.
-
-### API (`film-api`)
-
-```bash
-film-api
-# or: uvicorn film_agent_api.main:app --reload
-
-curl http://localhost:8000/health
-curl "http://localhost:8000/films?q=hp5"
-curl -X POST http://localhost:8000/recipes \
-  -H "Content-Type: application/json" \
-  -d '{"film":"Ilford HP5 Plus","developer":"Rodinal","format":"120","iso":"400","dilution":"1+50"}'
-```
-
-Regenerate the committed OpenAPI contract after API changes:
-
-```bash
-python scripts/export_openapi.py
-```
-
-### Web UI scaffold (`apps/web`)
-
-Phase 5 frontend — typed API client, Vite proxy, CORS-enabled backend.
-
-```bash
-# Terminal 1 — API
-set -a && source .env && set +a
-film-api
-
-# Terminal 2 — Web
-cd apps/web
-cp .env.example .env
-npm install
-npm run dev
-```
-
-Open [http://localhost:5173](http://localhost:5173). The dev server proxies `/api` → `http://localhost:8000`.
-
-```bash
-# Optional: regenerate TS types from openapi.json
-npm run generate:api-types
-```
-
-**Docker Compose (API + web):**
-
-```bash
-docker compose up --build api web
-# Web UI: http://localhost:5173  ·  API: http://localhost:8000
-```
-
-Requires gold data under `./data/` (run `film-agent pipeline` locally first, or mount existing data).
-
-Optional production-style static UI on port 8080:
-
-```bash
-docker compose --profile prod up --build api web-prod
-```
-
-See [docs/PHASE5_INTERFACE.md](docs/PHASE5_INTERFACE.md) for the UI ↔ API contract.
-
-### Environment variables
-
-Copy `.env.example` to `.env` and adjust for your setup:
-
-```bash
-cp .env.example .env
-set -a && source .env && set +a   # load before film-api / film-agent recipe
-```
-
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `DATA_PATH` | `data/` | Base directory for raw/processed data |
-| `LLM_PROVIDER` | `ollama` | `ollama`, `openai`, or `mock` (tests) |
-| `OLLAMA_BASE_URL` | `http://localhost:11434` | Ollama API base URL |
-| `OLLAMA_MODEL` | `llama3.1:8b` | Ollama model name (must match `ollama list`) |
-| `OLLAMA_TIMEOUT` | `600` | Seconds to wait for Ollama (raise for large models like 70B) |
-| `OPENAI_API_KEY` | *(empty)* | Required when `LLM_PROVIDER=openai` |
-| `OPENAI_MODEL` | `gpt-4o-mini` | OpenAI model name |
-| `PROMPT_VERSION` | `2` | Bump to invalidate recipe cache |
-| `MAX_EXTRA_CONTEXT_LENGTH` | `500` | Max chars for photographer preferences |
-| `CORS_ORIGINS` | `http://localhost:5173,...` | Comma-separated origins for the web UI |
-| `MAX_WORKERS` | `10` | Parallel film fetches during scrape |
-| `SCRAPE_DELAY_MIN` | `0.5` | Min delay (seconds) between per-film requests |
-| `SCRAPE_DELAY_MAX` | `1.5` | Max delay (seconds) between per-film requests |
-| `SCRAPE_MAX_RETRIES` | `3` | Retries for failed film fetches |
-
-### Run with Docker
-
-```bash
-docker build -t film-dev-agent .
-docker run --rm -v "$(pwd)/data:/data" film-dev-agent
-```
-
-### Run with Docker Compose
-
-```bash
-docker compose up --build
-```
-
-### Development
+## Development
 
 ```bash
 pip install -e ".[dev]"
-ruff check .
-pytest -q
+make check
+python scripts/export_openapi.py   # after API changes
 ```
+
+Environment variables: see [.env.example](.env.example) and [QUICKSTART.md](docs/QUICKSTART.md#llm-provider-recipes-only).
 
 ---
 
-## Data Layout
+## Docker
 
-Pipeline output is **local only** and gitignored. After running the pipeline:
-
-```
-data/
-├── raw/           # Bronze — scraper JSON (DigitalTruth)
-├── processed/     # Silver — wide parquet
-├── normalized/    # Gold — star-schema parquet (API/CLI reads this)
-├── historical/    # Rotated parquet on overwrite
-├── manifests/     # Pipeline run manifests
-└── cache/         # Recipe cache (Phase 4)
-```
-
-Curated seed catalog (committed):
-
-```
-catalogs/
-└── film_formats.json    # Format dimension (not from DigitalTruth)
-```
-
-To populate data, run `python entrypoint.py` or the individual stage jobs.  
-Tests use fixtures under `tests/fixtures/` — no committed scrape data.
-
----
-
-## Dependencies
-
-```
-beautifulsoup4
-requests
-pandas
-pyarrow
-duckdb
-rapidfuzz
-typer
-fastapi
-uvicorn
-jinja2
-httpx
-openai
+```bash
+docker compose up --build api web    # requires ./data gold from local pipeline
+docker compose run --rm etl          # one-off full pipeline in container
 ```
 
 ---
-
-## Next Steps
-
-Phase 5 is complete (web UI, API, LLM recipes, Docker Compose). Optional next work:
-
-- **Phase 6** — AWS serverless deployment (see [docs/ROADMAP.md](docs/ROADMAP.md))
-- **OSS polish** — wire `GET /formats` in the search dropdown, explorer source filter
-- **Legal** — optional contact with DigitalTruth before a high-visibility launch
-
-See [docs/ROADMAP.md](docs/ROADMAP.md) for the full plan.
 
 ## Data source & legal
 
-This tool reads publicly available data from [DigitalTruth](https://www.digitaltruth.com/devchart.php). It is **not affiliated** with Digitaltruth Photo Ltd. Users run the scraper themselves; see [docs/LEGAL.md](docs/LEGAL.md) before open-source release.
+Development times come from the public [DigitalTruth Massive Dev Chart](https://www.digitaltruth.com/devchart.php). Users run the scraper themselves; **do not commit or redistribute** full scraped datasets. See [docs/LEGAL.md](docs/LEGAL.md) and [NOTICE](NOTICE).
+
+---
+
+## License
+
+MIT — see [LICENSE](LICENSE). Copyright (c) 2025 Marcos Franco.

@@ -96,3 +96,13 @@ class ExplorerDataResponse(BaseModel):
     page: int
     page_size: int
     columns: list[str]
+    source_filter_applied: bool = False
+
+
+class ExplorerCatalogResponse(BaseModel):
+    catalog: str
+    rows: list[dict[str, Any]]
+    total: int
+    page: int
+    page_size: int
+    columns: list[str]

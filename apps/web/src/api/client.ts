@@ -3,6 +3,7 @@ import type {
   DatasetStatsResponse,
   DevelopingTimeItem,
   ExplorerSchemaResponse,
+  ExplorerCatalogResult,
   FormatItem,
   HealthResponse,
   PaginatedExplorerResult,
@@ -104,6 +105,15 @@ export const filmApi = {
     return request<ExplorerSchemaResponse>(`/explorer/schema${queryString({ layer })}`);
   },
 
+  getExplorerCatalog(params: {
+    catalog: "films" | "developers";
+    page?: number;
+    page_size?: number;
+    q?: string;
+  }): Promise<ExplorerCatalogResult> {
+    return request<ExplorerCatalogResult>(`/explorer/catalog${queryString(params)}`);
+  },
+
   getExplorerData(params: {
     layer: string;
     page?: number;
@@ -111,6 +121,7 @@ export const filmApi = {
     film?: string;
     developer?: string;
     iso?: string;
+    source?: string;
   }): Promise<PaginatedExplorerResult> {
     return request<PaginatedExplorerResult>(`/explorer/data${queryString(params)}`);
   },

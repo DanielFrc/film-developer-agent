@@ -493,6 +493,24 @@ Migration can be **incremental** — no big-bang rewrite. Wrap existing modules 
 
 ---
 
+### Phase 5.2 — Personal workflow ✅
+
+**Goal:** Local-first library, explorer catalogs, and global preferences without LLM settings in the UI.
+
+**Plan:** [PHASE5_2.md](PHASE5_2.md)
+
+| Iteration | Scope | Status |
+|-----------|-------|--------|
+| 5.2a | `GET /explorer/catalog`, dashboard drill-down | Done |
+| 5.2b | `localStorage` library (combos, recipes, defaults, favorites) | Done |
+| 5.2c | Dashboard sections, search save combo, recipe save/default | Done |
+| 5.2d | `/preferences` → merged into recipe `extra_context` | Done |
+| 5.2e | Per-film preference overrides | Done |
+
+**Exit criteria:** User can browse film/developer catalogs, pin combinations, save recipes, set defaults per `(film, developer, format)`, configure global and per-film preferences — all client-side except catalog API.
+
+---
+
 ### Phase 6 — Serverless AWS (optional, 3–4 weeks)
 
 **Goal:** Deploy to AWS only if needed. Architecture in Phases 1–5 must not require AWS.
@@ -587,9 +605,15 @@ Migration can be **incremental** — no big-bang rewrite. Wrap existing modules 
 
 ## Suggested Immediate Next Session
 
-**Phase 6 (optional):** AWS serverless deployment — S3 medallion, hosted API.
+**Portfolio / OSS (current focus):** v0.1.0 polish is complete — LICENSE, NOTICE, QUICKSTART, PORTFOLIO, CONTRIBUTING, CI, Makefile.
 
-Phase 5 is complete. See [PHASE5_SCREENS.md](PHASE5_SCREENS.md) and [PHASE5_INTERFACE.md](PHASE5_INTERFACE.md).
+Optional follow-ups:
+
+- Tag `v0.1.0` on GitHub and link in CHANGELOG
+- PyPI publish (`pip install film-developer-agent`) if wider CLI distribution is desired
+- **Phase 6 (optional):** AWS serverless deployment — S3 medallion, hosted API
+
+See [PORTFOLIO.md](PORTFOLIO.md), [PHASE5_2.md](PHASE5_2.md), and [QUICKSTART.md](QUICKSTART.md).
 
 ---
 
@@ -608,5 +632,7 @@ Phase 5 is complete. See [PHASE5_SCREENS.md](PHASE5_SCREENS.md) and [PHASE5_INTE
 
 | Document | Purpose |
 |----------|---------|
+| [QUICKSTART.md](QUICKSTART.md) | Three setup paths, LLM config, troubleshooting |
+| [PORTFOLIO.md](PORTFOLIO.md) | Demo script and interview talking points |
 | [ARCHITECTURE.md](ARCHITECTURE.md) | Current pipeline technical reference |
 | [LEGAL.md](LEGAL.md) | Open source, DigitalTruth, and data redistribution |

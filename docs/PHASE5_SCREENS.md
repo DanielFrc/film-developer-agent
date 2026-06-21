@@ -114,7 +114,7 @@ src/
 | `RecipeDetail` | Rendered recipe + actions |
 | `SourcePanel` | DigitalTruth attribution, `source_hash` |
 | `ExplorerPlaceholder` | *(removed)* — replaced by `DataExplorer` |
-| `DataExplorer` | Layer selector, filters, paginated table, schema, CSV export |
+| `DataExplorer` | Layer selector, filters (film/dev/ISO/source), paginated table, schema, CSV export |
 | `ErrorBanner` / `EmptyState` / `LoadingSpinner` | Shared states |
 
 ---

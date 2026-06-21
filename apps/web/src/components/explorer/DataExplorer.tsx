@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState, type FormEvent } from "react";
+import { useSearchParams } from "react-router-dom";
 import { filmApi } from "../../api/client";
 import type {
   ExplorerLayer,
@@ -14,6 +15,7 @@ import { EmptyState } from "../ui/EmptyState";
 import { ErrorBanner } from "../ui/ErrorBanner";
 import { FormField } from "../ui/FormField";
 import { LoadingSpinner } from "../ui/LoadingSpinner";
+import { CatalogExplorer } from "./CatalogExplorer";
 
 const LAYERS: { id: ExplorerLayer; label: string; description: string }[] = [
   { id: "bronze", label: "Bronze", description: "Raw scraped JSON" },
@@ -23,18 +25,47 @@ const LAYERS: { id: ExplorerLayer; label: string; description: string }[] = [
 
 const PAGE_SIZE = 25;
 
+const SOURCE_OPTIONS = [
+  { value: "", label: "All sources" },
+  { value: "digitaltruth", label: "DigitalTruth" },
+] as const;
+
 interface FilterDraft {
   film: string;
   developer: string;
   iso: string;
+  source: string;
 }
 
-const EMPTY_FILTERS: FilterDraft = { film: "", developer: "", iso: "" };
+const EMPTY_FILTERS: FilterDraft = { film: "", developer: "", iso: "", source: "" };
 
 export function DataExplorer() {
-  const [layer, setLayer] = useState<ExplorerLayer>("gold");
-  const [draftFilters, setDraftFilters] = useState<FilterDraft>(EMPTY_FILTERS);
-  const [appliedFilters, setAppliedFilters] = useState<FilterDraft>(EMPTY_FILTERS);
+  const [searchParams] = useSearchParams();
+  const catalogParam = searchParams.get("catalog");
+  const catalog =
+    catalogParam === "films" || catalogParam === "developers" ? catalogParam : null;
+
+  const initialFilm = searchParams.get("film") ?? "";
+  const initialDeveloper = searchParams.get("developer") ?? "";
+  const initialLayer = searchParams.get("layer");
+
+  const [layer, setLayer] = useState<ExplorerLayer>(
+    initialLayer === "bronze" || initialLayer === "silver" || initialLayer === "gold"
+      ? initialLayer
+      : "gold",
+  );
+  const [draftFilters, setDraftFilters] = useState<FilterDraft>({
+    film: initialFilm,
+    developer: initialDeveloper,
+    iso: "",
+    source: "",
+  });
+  const [appliedFilters, setAppliedFilters] = useState<FilterDraft>({
+    film: initialFilm,
+    developer: initialDeveloper,
+    iso: "",
+    source: "",
+  });
   const [page, setPage] = useState(1);
   const [showSchema, setShowSchema] = useState(false);
 
@@ -56,6 +87,7 @@ export function DataExplorer() {
           film: appliedFilters.film || undefined,
           developer: appliedFilters.developer || undefined,
           iso: appliedFilters.iso || undefined,
+          source: appliedFilters.source || undefined,
         }),
       ]);
       setSchema(schemaResult);
@@ -103,6 +135,10 @@ export function DataExplorer() {
 
   const totalPages = data ? Math.max(1, Math.ceil(data.total / data.page_size)) : 1;
 
+  if (catalog) {
+    return <CatalogExplorer catalog={catalog} />;
+  }
+
   return (
     <div className="space-y-6">
       <Card>
@@ -127,7 +163,7 @@ export function DataExplorer() {
 
       <Card title="Filters">
         <form
-          className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4"
+          className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5"
           onSubmit={handleApplyFilters}
         >
           <FormField
@@ -157,6 +193,25 @@ export function DataExplorer() {
               setDraftFilters((current) => ({ ...current, iso: event.target.value }))
             }
           />
+          <label className="block">
+            <span className="mb-1 block text-sm font-medium text-ink">Source</span>
+            <select
+              value={draftFilters.source}
+              onChange={(event) =>
+                setDraftFilters((current) => ({ ...current, source: event.target.value }))
+              }
+              className="w-full rounded-lg border border-border bg-surface-elevated px-3 py-2 text-sm text-ink outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/20"
+            >
+              {SOURCE_OPTIONS.map((option) => (
+                <option key={option.value || "all"} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+            <span className="mt-1 block text-xs text-muted">
+              Applies when the layer schema includes a source column.
+            </span>
+          </label>
           <div className="flex items-end gap-2">
             <Button type="submit" variant="secondary">
               Apply
@@ -186,6 +241,11 @@ export function DataExplorer() {
               <span>
                 Page {data.page} of {totalPages}
               </span>
+              {appliedFilters.source && !data.source_filter_applied ? (
+                <span className="text-xs text-warning">
+                  Source filter not applied — no source column in this layer.
+                </span>
+              ) : null}
             </div>
             <div className="flex flex-wrap gap-2">
               <Button

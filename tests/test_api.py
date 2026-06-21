@@ -162,3 +162,123 @@ def test_create_recipe_llm_failure_returns_502(api_client, gold_dataset, tmp_pat
 
     assert response.status_code == 502
     assert "Ollama request failed" in response.json()["detail"]
+
+
+def test_developers_search(api_client):
+    response = api_client.get("/developers", params={"q": "rod"})
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload[0]["name"] == "rodinal"
+
+
+def test_formats_list(api_client):
+    response = api_client.get("/formats")
+    assert response.status_code == 200
+    formats = {item["format"] for item in response.json()}
+    assert {"35mm", "120", "sheet"}.issubset(formats)
+
+
+def test_developing_times_not_found(api_client):
+    response = api_client.get(
+        "/developing-times",
+        params={
+            "film": "Ilford HP5 Plus",
+            "developer": "Rodinal",
+            "format": "120",
+            "iso": "99999",
+        },
+    )
+    assert response.status_code == 404
+    assert "No developing time" in response.json()["detail"]
+
+
+def test_create_recipe_ambiguous_returns_409(api_client):
+    body = {
+        "film": "Ilford HP5 Plus",
+        "developer": "Rodinal",
+        "format": "120",
+        "iso": "400",
+    }
+    response = api_client.post("/recipes", json=body)
+    assert response.status_code == 409
+    assert "dilution" in response.json()["detail"].lower()
+
+
+def test_stats_missing_gold_returns_503(tmp_path, monkeypatch):
+    import config
+
+    empty = tmp_path / "empty"
+    for sub in ("raw", "processed", "normalized", "historical", "manifests"):
+        (empty / sub).mkdir(parents=True)
+
+    monkeypatch.setenv("DATA_PATH", str(empty))
+    config.refresh_from_env()
+    try:
+        client = TestClient(app)
+        response = client.get("/stats")
+        assert response.status_code == 503
+        assert "Gold dataset not found" in response.json()["detail"]
+    finally:
+        config.refresh_from_env()
+
+
+def test_explorer_data_bronze(api_client):
+    response = api_client.get(
+        "/explorer/data",
+        params={"layer": "bronze", "page": 1, "page_size": 5},
+    )
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["layer"] == "bronze"
+    assert payload["total"] >= 1
+
+
+def test_explorer_data_silver(api_client):
+    response = api_client.get(
+        "/explorer/data",
+        params={"layer": "silver", "page": 1, "page_size": 5},
+    )
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["layer"] == "silver"
+    assert payload["total"] >= 1
+
+
+def test_explorer_catalog_films(api_client):
+    response = api_client.get(
+        "/explorer/catalog",
+        params={"catalog": "films", "page": 1, "page_size": 10, "q": "hp5"},
+    )
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["catalog"] == "films"
+    assert payload["total"] >= 1
+    assert payload["rows"]
+    assert "film" in payload["columns"]
+
+
+def test_explorer_catalog_developers(api_client):
+    response = api_client.get(
+        "/explorer/catalog",
+        params={"catalog": "developers", "page": 1, "page_size": 10},
+    )
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["catalog"] == "developers"
+    assert payload["total"] >= 1
+    assert "developer" in payload["columns"]
+
+
+def test_explorer_catalog_invalid(api_client):
+    response = api_client.get("/explorer/catalog", params={"catalog": "formats"})
+    assert response.status_code == 400
+    assert "Invalid catalog" in response.json()["detail"]
+
+
+def test_explorer_source_filter_without_column(api_client):
+    response = api_client.get(
+        "/explorer/data",
+        params={"layer": "gold", "source": "digitaltruth"},
+    )
+    assert response.status_code == 200
+    assert response.json()["source_filter_applied"] is False

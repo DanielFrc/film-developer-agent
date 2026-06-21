@@ -12,9 +12,6 @@ export function buildLookupResultView(
       : 100;
 
   const warnings: string[] = [];
-  if (!match.notes) {
-    warnings.push("No additional notes in the source record.");
-  }
   if (!match.temp) {
     warnings.push("Temperature not specified — assume 20°C unless noted otherwise.");
   }

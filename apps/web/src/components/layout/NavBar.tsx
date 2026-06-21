@@ -7,6 +7,7 @@ const links: { to: RoutePath; label: string }[] = [
   { to: "/", label: "Dashboard" },
   { to: "/search", label: "Search" },
   { to: "/explorer", label: "Explorer" },
+  { to: "/preferences", label: "Preferences" },
 ];
 
 interface NavBarProps {
