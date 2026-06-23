@@ -249,6 +249,6 @@ python scripts/export_openapi.py   # after API schema changes
 | [ARCHITECTURE.md](ARCHITECTURE.md) | Pipeline and data model |
 | [ROADMAP.md](ROADMAP.md) | Phased plan |
 | [PHASE5_2.md](PHASE5_2.md) | Personal library & preferences |
-| [PHASE5_3.md](PHASE5_3.md) | Library split (done) & personal knowledge (planned) |
+| [PHASE5_3.md](PHASE5_3.md) | Library IA, personal knowledge & session cards |
 | [LEGAL.md](LEGAL.md) | DigitalTruth and OSS |
 | [CONTRIBUTING.md](../CONTRIBUTING.md) | Contributor guide |
