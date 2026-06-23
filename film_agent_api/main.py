@@ -15,15 +15,16 @@ from film_agent_api.schemas import (
     RecipeResponse,
     SearchResultItem,
 )
+from film_core.dataset_info import get_dataset_metadata
 from film_core.query import (
     GoldStore,
+    compare_developers,
     lookup_developing_times,
     search_developers,
     search_films,
 )
 from film_core.query.gold_store import GoldDataNotFoundError
 from film_llm.service import RecipeAmbiguousError, RecipeLookupError, RecipeService
-from film_llm.source_hash import compute_source_hash
 
 app = FastAPI(
     title="Film Developer Agent API",
@@ -61,11 +62,17 @@ def get_dataset_stats() -> DatasetStatsResponse:
     except GoldDataNotFoundError as exc:
         raise HTTPException(status_code=503, detail=str(exc)) from exc
 
+    meta = get_dataset_metadata()
     return DatasetStatsResponse(
         films=films,
         developers=developers,
         developing_time_combinations=combinations,
-        source_hash=compute_source_hash(),
+        source_hash=meta.source_hash,
+        schema_version=meta.schema_version,
+        pipeline_run_id=meta.pipeline_run_id,
+        pipeline_started_at=meta.pipeline_started_at,
+        pipeline_finished_at=meta.pipeline_finished_at,
+        pipeline_status=meta.pipeline_status,
     )
 
 
@@ -139,6 +146,27 @@ def get_developing_times(
         raise HTTPException(
             status_code=404,
             detail="No developing time found for that combination.",
+        )
+
+    return [DevelopingTimeItem(**match.to_dict()) for match in matches]
+
+
+@app.get("/compare", response_model=list[DevelopingTimeItem])
+def compare_developer_times(
+    film: str = Query(...),
+    format: str = Query(...),
+    iso: str = Query(...),
+) -> list[DevelopingTimeItem]:
+    try:
+        with GoldStore() as store:
+            matches = compare_developers(store, film=film, format=format, iso=iso)
+    except GoldDataNotFoundError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+
+    if not matches:
+        raise HTTPException(
+            status_code=404,
+            detail="No developing times found for that film, format, and ISO.",
         )
 
     return [DevelopingTimeItem(**match.to_dict()) for match in matches]

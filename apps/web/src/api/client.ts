@@ -94,6 +94,14 @@ export const filmApi = {
     );
   },
 
+  compareDevelopers(params: {
+    film: string;
+    format: string;
+    iso: string;
+  }): Promise<DevelopingTimeItem[]> {
+    return request<DevelopingTimeItem[]>(`/compare${queryString(params)}`);
+  },
+
   createRecipe(body: RecipeRequest): Promise<RecipeResponse> {
     return request<RecipeResponse>("/recipes", {
       method: "POST",

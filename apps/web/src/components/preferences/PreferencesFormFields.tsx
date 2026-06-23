@@ -6,6 +6,7 @@ interface PreferencesFormFieldsProps {
   onChange: (patch: Partial<UserPreferences>) => void;
   hints?: Partial<UserPreferences>;
   idPrefix?: string;
+  showDarkroomSetup?: boolean;
 }
 
 function hintFor(hints: Partial<UserPreferences> | undefined, key: keyof UserPreferences): string | undefined {
@@ -22,6 +23,7 @@ export function PreferencesFormFields({
   onChange,
   hints,
   idPrefix = "pref",
+  showDarkroomSetup = false,
 }: PreferencesFormFieldsProps) {
   return (
     <>
@@ -58,22 +60,60 @@ export function PreferencesFormFields({
       <FormField
         label="Preferred developers"
         hint={
-          hints?.preferredDevelopers?.length
-            ? `Global: ${hints.preferredDevelopers.join(", ")}`
-            : "Comma-separated canonical names — used as hints only."
+          hints?.preferredDevelopers?.trim()
+            ? `Global: ${hints.preferredDevelopers}`
+            : "Separate with commas — e.g. rodinal, d-76, xtol"
         }
-        value={values.preferredDevelopers.join(", ")}
-        onChange={(event) =>
-          onChange({
-            preferredDevelopers: event.target.value
-              .split(",")
-              .map((item) => item.trim())
-              .filter(Boolean),
-          })
-        }
+        value={values.preferredDevelopers}
+        onChange={(event) => onChange({ preferredDevelopers: event.target.value })}
         placeholder="rodinal, d-76, xtol"
         id={`${idPrefix}-developers`}
       />
+
+      {showDarkroomSetup ? (
+        <>
+          <FormField
+            label="Tank volume (ml)"
+            hint="Used to calculate developer + water from chart dilution."
+            value={values.tankVolumeMl}
+            onChange={(event) => onChange({ tankVolumeMl: event.target.value })}
+            inputMode="numeric"
+            placeholder="500"
+            id={`${idPrefix}-tank-volume`}
+          />
+          <label className="block" htmlFor={`${idPrefix}-stop-bath`}>
+            <span className="mb-1 block text-sm font-medium text-ink">Stop bath</span>
+            <span className="mb-1 block text-xs text-muted">
+              Your chemistry — not from DigitalTruth chart.
+            </span>
+            <textarea
+              id={`${idPrefix}-stop-bath`}
+              value={values.stopBathRecipe}
+              onChange={(event) => onChange({ stopBathRecipe: event.target.value })}
+              rows={2}
+              className={textareaClassName}
+              placeholder="e.g. 5% white vinegar, same volume as developer, ~30s"
+            />
+          </label>
+          <FormField
+            label="Default pre-soak"
+            hint="Used on session cards when chart notes do not mention pre-soak."
+            value={values.presoakDefault}
+            onChange={(event) => onChange({ presoakDefault: event.target.value })}
+            placeholder="e.g. No pre-soak"
+            id={`${idPrefix}-presoak`}
+          />
+        </>
+      ) : (
+        <FormField
+          label="Default pre-soak (override)"
+          hint={hintFor(hints, "presoakDefault")}
+          value={values.presoakDefault}
+          onChange={(event) => onChange({ presoakDefault: event.target.value })}
+          placeholder={hints?.presoakDefault?.trim() ? hints.presoakDefault : "Inherit global default"}
+          id={`${idPrefix}-presoak`}
+        />
+      )}
     </>
   );
 }

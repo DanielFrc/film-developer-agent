@@ -8,7 +8,28 @@ Local-first **medallion ETL pipeline** and **LLM-assisted darkroom assistant**: 
 
 > **Portfolio / learning project** — demonstrates batch ingestion, star-schema modeling, serverless-ready API boundaries, and RAG-style LLM prompts. Not affiliated with Digitaltruth Photo Ltd. See [docs/LEGAL.md](docs/LEGAL.md).
 
-**Quick start:** [docs/QUICKSTART.md](docs/QUICKSTART.md) · **Interview demo:** [docs/PORTFOLIO.md](docs/PORTFOLIO.md)
+**Quick start:** [docs/QUICKSTART.md](docs/QUICKSTART.md) · **Interview demo:** [docs/PORTFOLIO.md](docs/PORTFOLIO.md) · **Gold contract:** [docs/DATA_CONTRACT.md](docs/DATA_CONTRACT.md)
+
+---
+
+## Who is this for?
+
+### Data engineers & learners
+
+- Medallion ETL with manifests, parquet, and star-schema modeling
+- DuckDB query layer and FastAPI consumer pattern
+- LLM integration with cache invalidation on dataset version
+- Split-ready design: [docs/DATA_CONTRACT.md](docs/DATA_CONTRACT.md) defines the gold interface between pipeline and app
+
+**Start here:** `film-agent pipeline` → [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) → [docs/PORTFOLIO.md](docs/PORTFOLIO.md)
+
+### Darkroom users (self-hosted)
+
+- Look up developing times and generate printable recipes
+- Save combinations, defaults, and preferences in the browser (export/import JSON in Preferences)
+- Dashboard shows dataset freshness after you run the CLI pipeline locally
+
+**Start here:** [docs/QUICKSTART.md](docs/QUICKSTART.md) Path 2 or 3 — gold data required once via CLI
 
 ---
 
@@ -20,7 +41,7 @@ Local-first **medallion ETL pipeline** and **LLM-assisted darkroom assistant**: 
 | **Query layer** | DuckDB in-process over parquet; rapidfuzz search |
 | **API** | FastAPI, OpenAPI, structured errors (404/409/502/503) |
 | **LLM** | Jinja2 prompts, Ollama/OpenAI, SQLite cache + `source_hash` invalidation |
-| **Web UI** | React + Vite — search, recipes, explorer, personal library |
+| **Web UI** | React + Vite — search, recipes, explorer, library, preferences |
 | **Ops** | Docker Compose, GitHub Actions CI, `make check` |
 
 ```mermaid
@@ -132,6 +153,8 @@ Gold output (`data/normalized/`) is **gitignored** — run the pipeline locally.
 | Document | Purpose |
 |----------|---------|
 | [QUICKSTART.md](docs/QUICKSTART.md) | Setup: CLI, local UI, Docker |
+| [DATA_CONTRACT.md](docs/DATA_CONTRACT.md) | Gold schema & manifest contract (split-ready) |
+| [PHASE5_3.md](docs/PHASE5_3.md) | Next: Library split & personal knowledge (planned) |
 | [PORTFOLIO.md](docs/PORTFOLIO.md) | Demo script & interview talking points |
 | [ARCHITECTURE.md](docs/ARCHITECTURE.md) | Pipeline & data model deep dive |
 | [ROADMAP.md](docs/ROADMAP.md) | Phased delivery (Phases 0–5.2 complete) |

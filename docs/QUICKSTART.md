@@ -174,11 +174,12 @@ Open [http://localhost:5173](http://localhost:5173). Vite proxies `/api` → `ht
 
 ### What you can do in the UI
 
-- Dashboard — dataset stats, saved recipes/combinations, favorites
+- Dashboard — dataset stats, freshness, explorer shortcuts
+- Library — saved recipes, combinations, favorites, recent searches
 - Search — developing time lookup
 - Recipe — generate, save, set defaults (personal data in browser `localStorage`)
 - Explorer — bronze/silver/gold tables and film/developer catalogs
-- Preferences — global and per-film context for recipes
+- Preferences — global and per-film context; library JSON backup
 
 ---
 
@@ -248,5 +249,6 @@ python scripts/export_openapi.py   # after API schema changes
 | [ARCHITECTURE.md](ARCHITECTURE.md) | Pipeline and data model |
 | [ROADMAP.md](ROADMAP.md) | Phased plan |
 | [PHASE5_2.md](PHASE5_2.md) | Personal library & preferences |
+| [PHASE5_3.md](PHASE5_3.md) | Library split (done) & personal knowledge (planned) |
 | [LEGAL.md](LEGAL.md) | DigitalTruth and OSS |
 | [CONTRIBUTING.md](../CONTRIBUTING.md) | Contributor guide |

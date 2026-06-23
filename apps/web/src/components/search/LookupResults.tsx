@@ -14,9 +14,8 @@ interface LookupResultsProps {
   selectedDilution: string;
   onSelectDilution: (dilution: string) => void;
   onConfirmMatch: (match: DevelopingTimeItem) => void;
-  onGenerateRecipe?: () => void;
-  onSaveCombination?: () => void;
   pushPullHint?: string | null;
+  workbookAdjustedTime?: string;
 }
 
 const confidenceTone = {
@@ -32,9 +31,8 @@ export function LookupResults({
   selectedDilution,
   onSelectDilution,
   onConfirmMatch,
-  onGenerateRecipe,
-  onSaveCombination,
   pushPullHint,
+  workbookAdjustedTime,
 }: LookupResultsProps) {
   if (!matches.length) {
     return null;
@@ -92,11 +90,20 @@ export function LookupResults({
 
           <dl className="grid gap-4 sm:grid-cols-2">
             <div>
-              <dt className="text-xs uppercase tracking-wide text-muted">Recommended time</dt>
+              <dt className="text-xs uppercase tracking-wide text-muted">Chart time</dt>
               <dd className="mt-1 text-2xl font-semibold text-ink">
                 {result.match.dev_time} min
               </dd>
             </div>
+            {workbookAdjustedTime ? (
+              <div>
+                <dt className="text-xs uppercase tracking-wide text-muted">Your working time</dt>
+                <dd className="mt-1 text-2xl font-semibold text-ink">
+                  {workbookAdjustedTime} min
+                </dd>
+                <p className="mt-1 text-xs text-muted">From your notes — not from chart</p>
+              </div>
+            ) : null}
             <div>
               <dt className="text-xs uppercase tracking-wide text-muted">Temperature</dt>
               <dd className="mt-1 text-lg font-medium text-ink">
@@ -160,19 +167,6 @@ export function LookupResults({
               DigitalTruth Massive Dev Chart
             </a>
           </p>
-
-          <div className="flex flex-wrap gap-3">
-            {onSaveCombination ? (
-              <Button type="button" variant="secondary" onClick={onSaveCombination}>
-                Save combination
-              </Button>
-            ) : null}
-            {onGenerateRecipe ? (
-              <Button type="button" onClick={onGenerateRecipe}>
-                Generate recipe
-              </Button>
-            ) : null}
-          </div>
         </div>
       ) : null}
     </Card>

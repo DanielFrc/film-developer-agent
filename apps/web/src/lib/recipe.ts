@@ -1,6 +1,11 @@
 import type { RecipeRequest, SearchFormValues } from "../api/types";
 import { buildExtraContext } from "./format";
-import { buildPreferencesContext, getEffectivePreferences } from "./userLibrary";
+import {
+  buildPreferencesContext,
+  buildWorkbookContext,
+  getCombinationWorkbook,
+  getEffectivePreferences,
+} from "./userLibrary";
 
 function mergeExtraContext(...parts: Array<string | undefined>): string | undefined {
   const merged = parts
@@ -25,6 +30,13 @@ export function buildRecipeRequest(
   forceRegenerate = false,
 ): RecipeRequest {
   const preferences = getEffectivePreferences(match.film);
+  const workbook = getCombinationWorkbook(
+    match.film,
+    match.developer,
+    match.format,
+    match.iso,
+    match.dilution,
+  );
   const formContext = buildExtraContext(
     form.agitationMethod || preferences.agitationMethod,
     form.extraContext,
@@ -38,7 +50,11 @@ export function buildRecipeRequest(
     format: match.format,
     iso: match.iso,
     dilution: match.dilution ?? undefined,
-    extra_context: mergeExtraContext(buildPreferencesContext(preferences), formContext),
+    extra_context: mergeExtraContext(
+      buildPreferencesContext(preferences),
+      buildWorkbookContext(workbook),
+      formContext,
+    ),
     force_regenerate: forceRegenerate,
   };
 }

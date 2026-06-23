@@ -13,6 +13,7 @@ export function useRecipeNavigation() {
     const state: RecipeNavigationState = {
       request: buildRecipeRequest(lookup.match, form, options?.forceGenerate ?? false),
       lookup,
+      searchForm: form,
       forceGenerate: options?.forceGenerate,
     };
     navigate("/recipe", { state });

@@ -62,8 +62,20 @@
     background: white;
   }
 
+  @page {
+    margin: 1.2cm;
+  }
+
   .recipe-markdown {
-    font-size: 12pt;
-    line-height: 1.5;
+    font-size: 11pt;
+    line-height: 1.45;
+  }
+
+  .recipe-print-summary {
+    break-inside: avoid;
+  }
+
+  .session-card {
+    break-inside: avoid;
   }
 }

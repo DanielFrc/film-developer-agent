@@ -39,6 +39,8 @@ def test_stats(api_client):
     assert payload["developers"] >= 1
     assert payload["developing_time_combinations"] >= 1
     assert payload["source"] == "DigitalTruth"
+    assert payload["schema_version"] == "1"
+    assert payload["source_hash"]
 
 
 def test_films_search(api_client):
@@ -190,6 +192,38 @@ def test_developing_times_not_found(api_client):
     )
     assert response.status_code == 404
     assert "No developing time" in response.json()["detail"]
+
+
+def test_compare_developers(api_client):
+    response = api_client.get(
+        "/compare",
+        params={
+            "film": "Ilford HP5 Plus",
+            "format": "120",
+            "iso": "400",
+        },
+    )
+    assert response.status_code == 200
+    payload = response.json()
+    assert len(payload) >= 2
+    developers = {item["developer"] for item in payload}
+    assert "rodinal" in developers
+    assert all(item["film"] == "ilford hp5 plus" for item in payload)
+    assert all(item["format"] == "120" for item in payload)
+    assert all(item["iso"] == "400" for item in payload)
+
+
+def test_compare_developers_not_found(api_client):
+    response = api_client.get(
+        "/compare",
+        params={
+            "film": "Ilford HP5 Plus",
+            "format": "120",
+            "iso": "99999",
+        },
+    )
+    assert response.status_code == 404
+    assert "No developing times" in response.json()["detail"]
 
 
 def test_create_recipe_ambiguous_returns_409(api_client):

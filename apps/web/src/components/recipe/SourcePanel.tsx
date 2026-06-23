@@ -1,15 +1,26 @@
-import type { RecipeResponse } from "../../api/types";
+import type { CombinationWorkbookEntry, RecipeResponse } from "../../api/types";
 import { DATA_SOURCE_URL } from "../../lib/constants";
 import { Card } from "../ui/Card";
 
 interface SourcePanelProps {
   response: RecipeResponse;
+  workbook?: CombinationWorkbookEntry | null;
 }
 
-export function SourcePanel({ response }: SourcePanelProps) {
+export function SourcePanel({ response, workbook }: SourcePanelProps) {
   return (
     <Card title="Sources consulted">
       <dl className="space-y-3 text-sm">
+        <div className="flex justify-between gap-4">
+          <dt className="text-muted">Chart time</dt>
+          <dd className="font-medium text-ink">{response.lookup.base_time} min</dd>
+        </div>
+        {workbook?.adjustedDevTime ? (
+          <div className="flex justify-between gap-4">
+            <dt className="text-muted">Your working time</dt>
+            <dd className="font-medium text-ink">{workbook.adjustedDevTime} min</dd>
+          </div>
+        ) : null}
         <div className="flex justify-between gap-4">
           <dt className="text-muted">Dataset</dt>
           <dd className="font-medium text-ink">
@@ -28,10 +39,6 @@ export function SourcePanel({ response }: SourcePanelProps) {
             {response.lookup.film} · {response.lookup.developer} · {response.lookup.format} · ISO{" "}
             {response.lookup.iso}
           </dd>
-        </div>
-        <div className="flex justify-between gap-4">
-          <dt className="text-muted">Base time</dt>
-          <dd className="font-medium text-ink">{response.lookup.base_time} min</dd>
         </div>
         <div className="flex justify-between gap-4">
           <dt className="text-muted">LLM</dt>

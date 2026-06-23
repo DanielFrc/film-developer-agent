@@ -266,6 +266,67 @@
         }
       }
     },
+    "/compare": {
+      "get": {
+        "summary": "Compare Developer Times",
+        "operationId": "compare_developer_times_compare_get",
+        "parameters": [
+          {
+            "name": "film",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Film"
+            }
+          },
+          {
+            "name": "format",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Format"
+            }
+          },
+          {
+            "name": "iso",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Iso"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/DevelopingTimeItem"
+                  },
+                  "title": "Response Compare Developer Times Compare Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/explorer/catalog": {
       "get": {
         "summary": "Get Explorer Catalog",
@@ -585,6 +646,55 @@
               }
             ],
             "title": "Source Hash"
+          },
+          "schema_version": {
+            "type": "string",
+            "title": "Schema Version",
+            "default": "1"
+          },
+          "pipeline_run_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pipeline Run Id"
+          },
+          "pipeline_started_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pipeline Started At"
+          },
+          "pipeline_finished_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pipeline Finished At"
+          },
+          "pipeline_status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pipeline Status"
           }
         },
         "type": "object",

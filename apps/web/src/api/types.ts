@@ -12,6 +12,118 @@ export interface DatasetStatsResponse {
   developing_time_combinations: number;
   source: string;
   source_hash: string | null;
+  schema_version: string;
+  pipeline_run_id: string | null;
+  pipeline_started_at: string | null;
+  pipeline_finished_at: string | null;
+  pipeline_status: string | null;
+}
+
+/** Browser library backup format */
+export const LIBRARY_EXPORT_VERSION_V1 = 1 as const;
+export const LIBRARY_EXPORT_VERSION_V2 = 2 as const;
+export const LIBRARY_EXPORT_VERSION = 3 as const;
+
+export type OutputGoal = "print" | "scan" | "both";
+
+/** Personal film notes — not from DigitalTruth chart */
+export interface FilmEnrichment {
+  film: string;
+  boxSpeedIso: string;
+  typicalEi: string;
+  notes: string;
+  updatedAt: string;
+}
+
+export type OutcomeDensity = "thin" | "ok" | "dense";
+export type OutcomeGrain = "fine" | "ok" | "heavy";
+
+/** Per-lookup-row annotations — not written to gold */
+export interface CombinationWorkbookEntry {
+  film: string;
+  developer: string;
+  format: string;
+  iso: string;
+  dilution: string;
+  adjustedDevTime: string;
+  adjustmentReason: string;
+  outputGoal: OutputGoal | "";
+  environmentNotes: string;
+  workflowNotes: string;
+  presoakOverride: string;
+  rollsDeveloped: number;
+  outcomeDensity: OutcomeDensity | "";
+  outcomeGrain: OutcomeGrain | "";
+  outcomeNotes: string;
+  updatedAt: string;
+}
+
+export type SessionCardSource = "chart" | "personal" | "search" | "unspecified";
+
+/** Sink-ready session view — computed from chart + preferences + workbook */
+export interface SessionCard {
+  film: string;
+  developer: string;
+  format: string;
+  iso: string;
+  dilution: string;
+  temperature: string | null;
+  chartTimeMin: string;
+  workingTimeMin: string;
+  workingTimeIsPersonal: boolean;
+  outputGoal: OutputGoal | null;
+  volumes: {
+    tankVolumeMl: number;
+    developerMl: number;
+    waterMl: number;
+    dilutionLabel: string;
+    computed: boolean;
+    note?: string;
+  };
+  agitation: string;
+  agitationSource: SessionCardSource;
+  stopBath: string;
+  presoak: string;
+  presoakSource: SessionCardSource;
+  chartNotes: string | null;
+  rollsDeveloped: number;
+  outcomeDensity: OutcomeDensity | "";
+  outcomeGrain: OutcomeGrain | "";
+  outcomeNotes: string | null;
+}
+
+/** Navigate to session card from Search or Library */
+export interface SessionNavigationState {
+  match?: DevelopingTimeItem;
+  combination?: SavedCombination;
+}
+
+export interface UserLibraryExport {
+  version: typeof LIBRARY_EXPORT_VERSION;
+  exportedAt: string;
+  savedCombinations: SavedCombination[];
+  savedRecipes: SavedRecipe[];
+  defaultRecipes: Record<string, DefaultRecipeEntry>;
+  favoriteFilms: FavoriteEntry[];
+  favoriteDevelopers: FavoriteEntry[];
+  userPreferences: UserPreferences;
+  filmPreferences: Record<string, FilmPreferencesOverride>;
+  filmEnrichment: Record<string, FilmEnrichment>;
+  combinationWorkbook: Record<string, CombinationWorkbookEntry>;
+}
+
+export interface DefaultRecipeEntry {
+  film: string;
+  developer: string;
+  format: string;
+  markdown: string;
+  savedAt: string;
+}
+
+export interface FavoriteEntry {
+  name: string;
+  starred: boolean;
+  lookupCount: number;
 }
 
 export interface SearchResultItem {
@@ -83,7 +195,15 @@ export interface ApiError {
 export const SCRAPED_FORMATS = ["35mm", "120", "sheet"] as const;
 export type ScrapedFormat = (typeof SCRAPED_FORMATS)[number];
 
-export type RoutePath = "/" | "/search" | "/recipe" | "/explorer" | "/preferences";
+export type RoutePath =
+  | "/"
+  | "/search"
+  | "/compare"
+  | "/session"
+  | "/recipe"
+  | "/explorer"
+  | "/library"
+  | "/preferences";
 
 export type ConfidenceLevel = "high" | "medium" | "low";
 
@@ -136,6 +256,12 @@ export interface RecipeDetailView {
   response: RecipeResponse;
   copied: boolean;
 }
+
+/** Fields passed Search ← Compare or recent-query replay */
+export type SearchPrefill = Pick<
+  RecentQuery,
+  "film" | "developer" | "format" | "iso" | "dilution"
+>;
 
 /** Recent query persisted in localStorage (Dashboard) */
 export interface RecentQuery {
@@ -227,7 +353,14 @@ export interface UserPreferences {
   agitationMethod: string;
   camera: string;
   styleNotes: string;
-  preferredDevelopers: string[];
+  /** Comma-separated developer names — parsed when used */
+  preferredDevelopers: string;
+  /** Total tank volume for dilution math (ml) */
+  tankVolumeMl: string;
+  /** Personal stop bath recipe — not from chart */
+  stopBathRecipe: string;
+  /** Default pre-soak when chart notes are silent */
+  presoakDefault: string;
 }
 
 /** Per-film overrides — empty fields inherit from global preferences */
@@ -242,6 +375,7 @@ export interface FilmPreferencesEntry {
 export interface RecipeNavigationState {
   request: RecipeRequest;
   lookup: LookupResultView;
+  searchForm: SearchFormValues;
   forceGenerate?: boolean;
 }
 

@@ -32,7 +32,9 @@ export function RecipeDetail({
 
   return (
     <div className="space-y-6 print:space-y-4">
-      <RecipeMetadata response={response} />
+      <div className="print:hidden">
+        <RecipeMetadata response={response} />
+      </div>
 
       <Card title="Development recipe" className="print:border-none print:shadow-none">
         <article className="recipe-markdown max-w-none text-ink">
