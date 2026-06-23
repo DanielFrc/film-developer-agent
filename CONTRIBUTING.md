@@ -21,7 +21,7 @@ Or use individual targets from the [Makefile](Makefile): `make test`, `make lint
 
 ## Pull requests
 
-1. Fork and create a feature branch from `main`.
+1. Fork and create a feature branch from `master`.
 2. Keep changes focused — one concern per PR when possible.
 3. Run `make check` before opening the PR.
 4. Update docs if you change API contracts (`python scripts/export_openapi.py` + web types if needed).
@@ -36,7 +36,7 @@ Or use individual targets from the [Makefile](Makefile): `make test`, `make lint
 ## Tests
 
 ```bash
-pytest -q                    # Python (59+ tests, mocked LLM in API tests)
+pytest -q                    # Python (64+ tests, mocked LLM in API tests)
 cd apps/web && npm run build # TypeScript compile + Vite production build
 ```
 

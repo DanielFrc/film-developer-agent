@@ -25,8 +25,9 @@ Local-first **medallion ETL pipeline** and **LLM-assisted darkroom assistant**: 
 
 ### Darkroom users (self-hosted)
 
-- Look up developing times and generate printable recipes
-- Save combinations, defaults, and preferences in the browser (export/import JSON in Preferences)
+- Look up developing times, **session cards** (sink checklist), and optional LLM recipes
+- Compare developers for the same film / format / ISO
+- Save sessions, workbook notes, and preferences in the browser (export/import JSON)
 - Dashboard shows dataset freshness after you run the CLI pipeline locally
 
 **Start here:** [docs/QUICKSTART.md](docs/QUICKSTART.md) Path 2 or 3 — gold data required once via CLI
@@ -41,7 +42,7 @@ Local-first **medallion ETL pipeline** and **LLM-assisted darkroom assistant**: 
 | **Query layer** | DuckDB in-process over parquet; rapidfuzz search |
 | **API** | FastAPI, OpenAPI, structured errors (404/409/502/503) |
 | **LLM** | Jinja2 prompts, Ollama/OpenAI, SQLite cache + `source_hash` invalidation |
-| **Web UI** | React + Vite — search, recipes, explorer, library, preferences |
+| **Web UI** | React + Vite — search, session cards, compare, library, recipes, explorer, preferences (PWA) |
 | **Ops** | Docker Compose, GitHub Actions CI, `make check` |
 
 ```mermaid
@@ -66,10 +67,12 @@ flowchart LR
 
 - **Pipeline** — `film-agent pipeline` with optional `--skip-scrape`; run manifests under `data/manifests/`
 - **Lookup** — film + developer + format + ISO + dilution from normalized gold data
-- **Recipes** — LLM generates a 12-section markdown recipe; base developing time never invented by the model
+- **Session cards** — dilution math, stop bath, agitation, pre-soak; no LLM required
+- **Compare** — chart times across developers for the same film / format / ISO
+- **Recipes** — optional LLM 12-section markdown; base developing time never invented by the model
 - **Cache** — repeat identical lookups skip the LLM (`cached: true`)
 - **Explorer** — browse bronze/silver/gold; film/developer catalog views
-- **Personal library** — saved combinations, recipes, defaults, favorites, global + per-film preferences (browser `localStorage`)
+- **Personal library** — saved sessions, recipes, workbook log (rolls + outcomes), film notes, defaults, favorites (browser `localStorage`, export v3)
 
 ---
 
@@ -154,13 +157,14 @@ Gold output (`data/normalized/`) is **gitignored** — run the pipeline locally.
 |----------|---------|
 | [QUICKSTART.md](docs/QUICKSTART.md) | Setup: CLI, local UI, Docker |
 | [DATA_CONTRACT.md](docs/DATA_CONTRACT.md) | Gold schema & manifest contract (split-ready) |
-| [PHASE5_3.md](docs/PHASE5_3.md) | Next: Library split & personal knowledge (planned) |
+| [PHASE5_3.md](docs/PHASE5_3.md) | Library IA, personal knowledge & session cards |
 | [PORTFOLIO.md](docs/PORTFOLIO.md) | Demo script & interview talking points |
 | [ARCHITECTURE.md](docs/ARCHITECTURE.md) | Pipeline & data model deep dive |
-| [ROADMAP.md](docs/ROADMAP.md) | Phased delivery (Phases 0–5.2 complete) |
+| [ROADMAP.md](docs/ROADMAP.md) | Phased delivery (through Phase 5.6) |
 | [LEGAL.md](docs/LEGAL.md) | DigitalTruth attribution & OSS boundaries |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | How to contribute |
 | [CHANGELOG.md](CHANGELOG.md) | Release history |
+| [releases/v0.2.0.md](releases/v0.2.0.md) | v0.2.0 release notes (GitHub draft) |
 
 ---
 
