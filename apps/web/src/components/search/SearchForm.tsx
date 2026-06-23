@@ -13,6 +13,7 @@ interface SearchFormProps {
   loading: boolean;
   onChange: (patch: Partial<SearchFormValues>) => void;
   onSubmit: () => void;
+  onFilmSelect?: (item: { name: string; score: number }) => Partial<SearchFormValues>;
 }
 
 function formatLabel(item: FormatItem): string {
@@ -29,6 +30,7 @@ export function SearchForm({
   loading,
   onChange,
   onSubmit,
+  onFilmSelect,
 }: SearchFormProps) {
   function handleSubmit(event: FormEvent) {
     event.preventDefault();
@@ -45,11 +47,13 @@ export function SearchForm({
             onChange({ filmQuery, filmSelected: null, filmScore: null })
           }
           onSelect={(item) =>
-            onChange({
-              filmQuery: item.name,
-              filmSelected: item.name,
-              filmScore: item.score,
-            })
+            onChange(
+              onFilmSelect?.(item) ?? {
+                filmQuery: item.name,
+                filmSelected: item.name,
+                filmScore: item.score,
+              },
+            )
           }
           onClear={() =>
             onChange({ filmQuery: "", filmSelected: null, filmScore: null })

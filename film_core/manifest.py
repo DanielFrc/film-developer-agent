@@ -5,6 +5,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
+from film_core.contract import GOLD_SCHEMA_VERSION
 from film_core.paths import get_data_paths
 from film_core.storage import get_storage
 
@@ -37,6 +38,7 @@ class PipelineManifest:
     finished_at: str | None = None
     status: str = "running"
     data_path: str = ""
+    schema_version: str = GOLD_SCHEMA_VERSION
     stages: dict[str, StageRecord] = field(default_factory=dict)
     error: str | None = None
 

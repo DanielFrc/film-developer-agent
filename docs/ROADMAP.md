@@ -511,6 +511,25 @@ Migration can be **incremental** — no big-bang rewrite. Wrap existing modules 
 
 ---
 
+### Phase 5.3+ — Personal knowledge & IA
+
+**Goal:** Split Dashboard/Library, structured annotations (not chat), film enrichment + combination workbook — user layer only (storage scope **C**).
+
+**Plan:** [PHASE5_3.md](PHASE5_3.md)
+
+| Iteration | Scope | Status |
+|-----------|-------|--------|
+| 5.3 | `/library` route; slim data-focused Dashboard | Done |
+| 5.4a | Film enrichment (box speed, typical EI, notes) | Done |
+| 5.4b | Combination workbook (adjusted time, scan/print goal) | Done |
+| 5.4c | Recipe sidebar; chart vs your time; regenerate with notes | Done |
+| 5.4d | Library export v2 | Done |
+| 5.5 | Compare, print/PDF, PWA (optional) | Done |
+
+**Exit criteria:** See [PHASE5_3.md](PHASE5_3.md).
+
+---
+
 ### Phase 6 — Serverless AWS (optional, 3–4 weeks)
 
 **Goal:** Deploy to AWS only if needed. Architecture in Phases 1–5 must not require AWS.
@@ -609,8 +628,8 @@ Migration can be **incremental** — no big-bang rewrite. Wrap existing modules 
 
 Optional follow-ups:
 
-- Tag `v0.1.0` on GitHub and link in CHANGELOG
-- PyPI publish (`pip install film-developer-agent`) if wider CLI distribution is desired
+- **Phase 5.3+** — Library split, film enrichment, combination workbook ([PHASE5_3.md](PHASE5_3.md))
+- Tag `v0.1.1` after split-ready polish lands on `master`
 - **Phase 6 (optional):** AWS serverless deployment — S3 medallion, hosted API
 
 See [PORTFOLIO.md](PORTFOLIO.md), [PHASE5_2.md](PHASE5_2.md), and [QUICKSTART.md](QUICKSTART.md).
@@ -633,6 +652,7 @@ See [PORTFOLIO.md](PORTFOLIO.md), [PHASE5_2.md](PHASE5_2.md), and [QUICKSTART.md
 | Document | Purpose |
 |----------|---------|
 | [QUICKSTART.md](QUICKSTART.md) | Three setup paths, LLM config, troubleshooting |
+| [DATA_CONTRACT.md](DATA_CONTRACT.md) | Gold schema & manifest contract |
 | [PORTFOLIO.md](PORTFOLIO.md) | Demo script and interview talking points |
 | [ARCHITECTURE.md](ARCHITECTURE.md) | Current pipeline technical reference |
 | [LEGAL.md](LEGAL.md) | Open source, DigitalTruth, and data redistribution |

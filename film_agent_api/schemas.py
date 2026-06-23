@@ -13,6 +13,11 @@ class DatasetStatsResponse(BaseModel):
     developing_time_combinations: int
     source: str = "DigitalTruth"
     source_hash: str | None = None
+    schema_version: str = "1"
+    pipeline_run_id: str | None = None
+    pipeline_started_at: str | None = None
+    pipeline_finished_at: str | None = None
+    pipeline_status: str | None = None
 
 
 class SearchResultItem(BaseModel):

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Navigate, useLocation, useNavigate } from "react-router-dom";
 import { filmApi } from "../api/client";
 import type {
@@ -8,12 +8,15 @@ import type {
   SavedRecipeViewState,
 } from "../api/types";
 import { RecipeDetail } from "../components/recipe/RecipeDetail";
+import { CombinationWorkbookPanel } from "../components/recipe/CombinationWorkbookPanel";
+import { RecipePrintSummary } from "../components/recipe/RecipePrintSummary";
 import { SourcePanel } from "../components/recipe/SourcePanel";
 import { PageHeader } from "../components/layout/PageHeader";
 import { ErrorBanner } from "../components/ui/ErrorBanner";
 import { LoadingSpinner } from "../components/ui/LoadingSpinner";
 import { formatApiError, type ApiErrorView } from "../lib/apiErrors";
-import { getDefaultRecipe } from "../lib/userLibrary";
+import { buildRecipeRequest } from "../lib/recipe";
+import { getCombinationWorkbook, getDefaultRecipe } from "../lib/userLibrary";
 import { useUserLibrary } from "../hooks/useUserLibrary";
 import { Card } from "../components/ui/Card";
 
@@ -83,6 +86,7 @@ export function RecipePage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<ApiErrorView | null>(null);
   const [usingDefault, setUsingDefault] = useState(false);
+  const [workbookRevision, setWorkbookRevision] = useState(0);
 
   const generate = useCallback(
     async (request: RecipeNavigationState["request"]) => {
@@ -128,10 +132,32 @@ export function RecipePage() {
 
   const request = navState?.request;
   const lookup = navState?.lookup;
+  const searchForm = navState?.searchForm;
+  const match = lookup?.match;
+  const workbook = useMemo(() => {
+    if (!match) return null;
+    return getCombinationWorkbook(
+      match.film,
+      match.developer,
+      match.format,
+      match.iso,
+      match.dilution,
+    );
+  }, [match, workbookRevision]);
+
+  function rebuildRequest(forceRegenerate: boolean) {
+    if (!match || !searchForm) return null;
+    return buildRecipeRequest(match, searchForm, forceRegenerate);
+  }
 
   function handleRegenerate() {
-    if (!request) return;
-    void generate({ ...request, force_regenerate: true });
+    const fresh = rebuildRequest(true);
+    if (!fresh) return;
+    void generate(fresh);
+  }
+
+  function handleRegenerateWithNotes() {
+    handleRegenerate();
   }
 
   function handlePrint() {
@@ -158,7 +184,7 @@ export function RecipePage() {
   }
 
   return (
-    <div>
+    <div className="print:text-black">
       <PageHeader
         title="Development recipe"
         description={
@@ -169,16 +195,17 @@ export function RecipePage() {
         action={
           <button
             type="button"
-            className="text-sm text-muted underline hover:text-ink"
-            onClick={() => navigate(savedRecipe ? "/" : "/search")}
+            className="text-sm text-muted underline hover:text-ink print:hidden"
+            onClick={() => navigate(savedRecipe ? "/library" : "/search")}
           >
-            {savedRecipe ? "Back to dashboard" : "Back to search"}
+            {savedRecipe ? "Back to library" : "Back to search"}
           </button>
         }
+        className="print:hidden"
       />
 
       {usingDefault ? (
-        <Card className="mb-6">
+        <Card className="mb-6 print:hidden">
           <p className="text-sm text-muted">
             Showing your default recipe for this film, developer, and format. Use Regenerate to call the LLM instead.
           </p>
@@ -194,22 +221,38 @@ export function RecipePage() {
           <ErrorBanner
             message={error.message}
             hint={error.hint}
-            onRetry={() => request && void generate(request)}
+            onRetry={() => {
+              const fresh = rebuildRequest(false) ?? request;
+              if (fresh) void generate(fresh);
+            }}
           />
         </div>
       ) : null}
 
       {response ? (
-        <div className="grid gap-8 lg:grid-cols-[minmax(0,2fr)_minmax(280px,1fr)]">
-          <RecipeDetail
+        <div className="grid gap-8 lg:grid-cols-[minmax(0,2fr)_minmax(280px,1fr)] print:block">
+          <div>
+            <RecipePrintSummary response={response} workbook={workbook} />
+            <RecipeDetail
             response={response}
             loading={loading}
-            onRegenerate={request ? handleRegenerate : undefined}
+            onRegenerate={searchForm ? handleRegenerate : undefined}
             onPrint={handlePrint}
             onSaveRecipe={handleSaveRecipe}
             onSetDefault={request ? handleSetDefault : undefined}
-          />
-          {lookup ? <SourcePanel response={response} /> : null}
+            />
+          </div>
+          {lookup && match ? (
+            <div className="space-y-6 print:hidden">
+              <CombinationWorkbookPanel
+                match={match}
+                onSaved={() => setWorkbookRevision((value) => value + 1)}
+                onRegenerateWithNotes={searchForm ? handleRegenerateWithNotes : undefined}
+                regenerateLoading={loading}
+              />
+              <SourcePanel response={response} workbook={workbook} />
+            </div>
+          ) : null}
         </div>
       ) : null}
     </div>

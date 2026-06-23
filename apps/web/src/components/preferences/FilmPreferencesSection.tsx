@@ -19,10 +19,14 @@ interface FilmPreferencesSectionProps {
 
 function overrideToDraft(override: FilmPreferencesOverride | undefined): UserPreferences {
   return {
+    ...EMPTY_USER_PREFERENCES,
     camera: override?.camera ?? "",
     agitationMethod: override?.agitationMethod ?? "",
     styleNotes: override?.styleNotes ?? "",
-    preferredDevelopers: override?.preferredDevelopers ?? [],
+    preferredDevelopers: override?.preferredDevelopers ?? "",
+    presoakDefault: override?.presoakDefault ?? "",
+    tankVolumeMl: "",
+    stopBathRecipe: "",
   };
 }
 
@@ -31,7 +35,8 @@ function summarizeOverride(override: FilmPreferencesOverride): string {
   if (override.camera?.trim()) parts.push("camera");
   if (override.agitationMethod?.trim()) parts.push("agitation");
   if (override.styleNotes?.trim()) parts.push("style");
-  if (override.preferredDevelopers?.length) parts.push("developers");
+  if (override.preferredDevelopers?.trim()) parts.push("developers");
+  if (override.presoakDefault?.trim()) parts.push("presoak");
   return parts.length ? parts.join(", ") : "empty";
 }
 

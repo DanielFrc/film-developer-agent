@@ -62,8 +62,9 @@ flowchart TB
 2. **CLI lookup** — `film-agent times lookup --film "hp5" --developer "rodinal" --format 120 --iso 400`
 3. **Fuzzy search** — `film-agent films search "rollei"`
 4. **Recipe** — generate in UI or `film-agent recipe ... --output recipe.md`; show `cached: true` on second run.
-5. **Explorer** — open gold layer filtered by film; mention catalog drill-down.
-6. **Optional DE depth** — open `data/manifests/*.json` or explain pipeline stages in ARCHITECTURE.md.
+5. **Library** — saved combinations, recipes, favorites (personal workflow)
+6. **Explorer** — open gold layer filtered by film; mention catalog drill-down
+7. **Optional DE depth** — open `data/manifests/*.json` or explain pipeline stages in ARCHITECTURE.md
 
 Prep: run pipeline once; have Ollama running or `LLM_PROVIDER=openai` in `.env`.
 
@@ -101,6 +102,7 @@ Shows scope discipline (good in senior DE interviews):
 
 | Doc | Use when |
 |-----|----------|
+| [DATA_CONTRACT.md](DATA_CONTRACT.md) | Gold schema & split boundary |
 | [ARCHITECTURE.md](ARCHITECTURE.md) | Deep technical Q&A |
 | [ROADMAP.md](ROADMAP.md) | Phased delivery story |
 | [LEGAL.md](LEGAL.md) | Data ethics / OSS boundaries |

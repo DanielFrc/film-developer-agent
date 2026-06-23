@@ -2,10 +2,12 @@ import { FormEvent, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import type { UserPreferences } from "../api/types";
 import { FilmPreferencesSection } from "../components/preferences/FilmPreferencesSection";
+import { LibraryBackupSection } from "../components/preferences/LibraryBackupSection";
 import { PreferencesFormFields } from "../components/preferences/PreferencesFormFields";
 import { PageHeader } from "../components/layout/PageHeader";
 import { Card } from "../components/ui/Card";
 import { Button } from "../components/ui/Button";
+import { loadUserPreferences } from "../lib/userLibrary";
 import { useFilmPreferencesState, useUserPreferencesState } from "../hooks/useUserLibrary";
 
 export function PreferencesPage() {
@@ -28,7 +30,7 @@ export function PreferencesPage() {
     <div>
       <PageHeader
         title="Preferences"
-        description="Global profile and optional per-film overrides merged into recipe extra context."
+        description="Global darkroom profile, tank volume, stop bath, and optional per-film overrides for session cards and recipes."
       />
 
       <Card title="Global profile" className="mb-8">
@@ -37,6 +39,7 @@ export function PreferencesPage() {
             values={draft}
             onChange={(patch) => setDraft((current) => ({ ...current, ...patch }))}
             idPrefix="global-pref"
+            showDarkroomSetup
           />
           <div className="flex items-center gap-3">
             <Button type="submit">Save global preferences</Button>
@@ -45,13 +48,23 @@ export function PreferencesPage() {
         </form>
       </Card>
 
-      <FilmPreferencesSection
+      <LibraryBackupSection
+        onImported={() => {
+          const next = loadUserPreferences();
+          saveAll(next);
+          setDraft(next);
+        }}
+      />
+
+      <div className="mt-8">
+        <FilmPreferencesSection
         globalPreferences={preferences}
         entries={filmPreferences.entries}
         initialFilm={initialFilm}
         onSave={filmPreferences.saveOverride}
         onRemove={filmPreferences.removeOverride}
-      />
+        />
+      </div>
     </div>
   );
 }
