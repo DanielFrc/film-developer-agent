@@ -99,3 +99,27 @@ def test_recipe_service_extra_context_changes_cache_key(recipe_service):
     assert base.cache_key != with_context.cache_key
     assert with_context.extra_context == "stand development"
     assert with_context.cached is False
+
+
+def test_recipe_service_language_changes_cache_key(recipe_service):
+    english = recipe_service.generate(
+        film="Ilford HP5 Plus",
+        developer="Rodinal",
+        format="120",
+        iso="400",
+        dilution="1+50",
+        language="en",
+    )
+    spanish = recipe_service.generate(
+        film="Ilford HP5 Plus",
+        developer="Rodinal",
+        format="120",
+        iso="400",
+        dilution="1+50",
+        language="es",
+    )
+
+    assert english.cache_key != spanish.cache_key
+    assert english.language == "en"
+    assert spanish.language == "es"
+    assert spanish.cached is False

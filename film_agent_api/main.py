@@ -14,6 +14,8 @@ from film_agent_api.schemas import (
     RecipeRequest,
     RecipeResponse,
     SearchResultItem,
+    SessionSummaryRequest,
+    SessionSummaryResponse,
 )
 from film_core.dataset_info import get_dataset_metadata
 from film_core.query import (
@@ -24,7 +26,9 @@ from film_core.query import (
     search_films,
 )
 from film_core.query.gold_store import GoldDataNotFoundError
+from film_llm.prompt import SessionSummaryContext
 from film_llm.service import RecipeAmbiguousError, RecipeLookupError, RecipeService
+from film_llm.session_summary import SessionSummaryService
 
 app = FastAPI(
     title="Film Developer Agent API",
@@ -43,6 +47,10 @@ app.add_middleware(
 
 def get_recipe_service() -> RecipeService:
     return RecipeService()
+
+
+def get_session_summary_service() -> SessionSummaryService:
+    return SessionSummaryService()
 
 
 @app.get("/health", response_model=HealthResponse)
@@ -264,6 +272,7 @@ def create_recipe(
             iso=request.iso,
             dilution=request.dilution,
             extra_context=request.extra_context,
+            language=request.language,
             force_regenerate=request.force_regenerate,
         )
     except RecipeLookupError as exc:
@@ -287,6 +296,49 @@ def create_recipe(
         llm_model=result.llm_model,
         lookup=RecipeLookupItem(**result.lookup.__dict__),
         extra_context=result.extra_context,
+        language=result.language,
+    )
+
+
+@app.post("/session-summaries", response_model=SessionSummaryResponse)
+def create_session_summary(
+    request: SessionSummaryRequest,
+    service: SessionSummaryService = Depends(get_session_summary_service),
+) -> SessionSummaryResponse:
+    try:
+        result = service.generate(
+            context=SessionSummaryContext(
+                film=request.film,
+                developer=request.developer,
+                format=request.format,
+                iso=request.iso,
+                chart_time=request.chart_time,
+                dilution=request.dilution or "stock",
+                working_time=request.working_time,
+                temperature=request.temperature,
+                output_goal=request.output_goal,
+                developer_prep=request.developer_prep,
+                stop_bath=request.stop_bath,
+                agitation=request.agitation,
+                presoak=request.presoak,
+                chart_notes=request.chart_notes,
+                journal_context=request.journal_context,
+                language=request.language or "en",
+            ),
+            language=request.language,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except RuntimeError as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
+
+    return SessionSummaryResponse(
+        summary=result.summary,
+        prompt_version=result.prompt_version,
+        llm_provider=result.llm_provider,
+        llm_model=result.llm_model,
+        disclaimer=result.disclaimer,
+        language=result.language,
     )
 
 

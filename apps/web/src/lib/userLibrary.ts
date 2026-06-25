@@ -5,12 +5,14 @@ import type {
   FilmEnrichment,
   FilmPreferencesEntry,
   FilmPreferencesOverride,
+  LlmLanguage,
   SavedCombination,
   SavedRecipe,
   UserLibraryExport,
   UserPreferences,
 } from "../api/types";
 import { parsePreferredDevelopers } from "./preferences";
+import { normalizeLlmLanguage } from "./llmLanguages";
 import {
   LIBRARY_EXPORT_VERSION as EXPORT_VERSION,
   LIBRARY_EXPORT_VERSION_V1,
@@ -44,6 +46,7 @@ export const EMPTY_USER_PREFERENCES: UserPreferences = {
   tankVolumeMl: "500",
   stopBathRecipe: "5% white vinegar (acetic acid), same volume as developer, ~30 seconds",
   presoakDefault: "",
+  recipeLanguage: "en",
 };
 
 function normalizeUserPreferences(raw: Partial<UserPreferences> & { preferredDevelopers?: unknown }): UserPreferences {
@@ -53,6 +56,7 @@ function normalizeUserPreferences(raw: Partial<UserPreferences> & { preferredDev
   } else if (typeof merged.preferredDevelopers !== "string") {
     merged.preferredDevelopers = "";
   }
+  merged.recipeLanguage = normalizeLlmLanguage(merged.recipeLanguage);
   return merged;
 }
 
@@ -63,7 +67,17 @@ function normalizeWorkbookEntry(entry: CombinationWorkbookEntry): CombinationWor
     rollsDeveloped: entry.rollsDeveloped ?? 0,
     outcomeDensity: entry.outcomeDensity ?? "",
     outcomeGrain: entry.outcomeGrain ?? "",
+    outcomeContrast: entry.outcomeContrast ?? "",
+    outcomeScan: entry.outcomeScan ?? "",
     outcomeNotes: entry.outcomeNotes ?? "",
+    executiveSummary: entry.executiveSummary ?? "",
+    executiveSummaryAt: entry.executiveSummaryAt ?? "",
+    executiveSummaryLanguage:
+      entry.executiveSummaryLanguage === "es"
+        ? "es"
+        : entry.executiveSummaryLanguage === "en"
+          ? "en"
+          : "",
   };
 }
 
@@ -180,7 +194,12 @@ function workbookDraftFromMatch(match: {
     rollsDeveloped: 0,
     outcomeDensity: "",
     outcomeGrain: "",
+    outcomeContrast: "",
+    outcomeScan: "",
     outcomeNotes: "",
+    executiveSummary: "",
+    executiveSummaryAt: "",
+    executiveSummaryLanguage: "",
   };
 }
 
@@ -202,7 +221,17 @@ function cleanWorkbookEntry(
     rollsDeveloped: Math.max(0, entry.rollsDeveloped ?? 0),
     outcomeDensity: entry.outcomeDensity,
     outcomeGrain: entry.outcomeGrain,
+    outcomeContrast: entry.outcomeContrast,
+    outcomeScan: entry.outcomeScan,
     outcomeNotes: entry.outcomeNotes.trim(),
+    executiveSummary: entry.executiveSummary?.trim() ?? "",
+    executiveSummaryAt: entry.executiveSummaryAt ?? "",
+    executiveSummaryLanguage:
+      entry.executiveSummaryLanguage === "es"
+        ? "es"
+        : entry.executiveSummaryLanguage === "en"
+          ? "en"
+          : "",
     updatedAt: new Date().toISOString(),
   };
   const hasContent =
@@ -215,6 +244,8 @@ function cleanWorkbookEntry(
     cleaned.rollsDeveloped > 0 ||
     cleaned.outcomeDensity ||
     cleaned.outcomeGrain ||
+    cleaned.outcomeContrast ||
+    cleaned.outcomeScan ||
     cleaned.outcomeNotes;
   return hasContent ? cleaned : null;
 }
@@ -239,6 +270,51 @@ export function saveCombinationWorkbook(
   const next = { ...current, [key]: cleaned };
   writeJson(KEYS.combinationWorkbook, next);
   return cleaned;
+}
+
+export function isExecutiveSummaryStale(entry: CombinationWorkbookEntry | null): boolean {
+  if (!entry?.executiveSummary.trim() || !entry.executiveSummaryAt) {
+    return false;
+  }
+  return new Date(entry.updatedAt).getTime() > new Date(entry.executiveSummaryAt).getTime();
+}
+
+export function saveWorkbookExecutiveSummary(
+  match: {
+    film: string;
+    developer: string;
+    format: string;
+    iso: string;
+    dilution?: string | null;
+  },
+  summary: string,
+  language: LlmLanguage,
+): CombinationWorkbookEntry {
+  const existing = getCombinationWorkbook(
+    match.film,
+    match.developer,
+    match.format,
+    match.iso,
+    match.dilution,
+  );
+  const now = new Date().toISOString();
+  const key = combinationWorkbookKey(
+    match.film,
+    match.developer,
+    match.format,
+    match.iso,
+    match.dilution,
+  );
+  const entry: CombinationWorkbookEntry = normalizeWorkbookEntry({
+    ...(existing ?? workbookDraftFromMatch(match)),
+    executiveSummary: summary.trim(),
+    executiveSummaryAt: now,
+    executiveSummaryLanguage: language,
+    updatedAt: existing?.updatedAt ?? now,
+  });
+  const current = loadCombinationWorkbookMap();
+  writeJson(KEYS.combinationWorkbook, { ...current, [key]: entry });
+  return entry;
 }
 
 export function removeCombinationWorkbook(
@@ -285,7 +361,12 @@ export function incrementWorkbookRolls(
         rollsDeveloped: existing.rollsDeveloped + 1,
         outcomeDensity: existing.outcomeDensity,
         outcomeGrain: existing.outcomeGrain,
+        outcomeContrast: existing.outcomeContrast,
+        outcomeScan: existing.outcomeScan,
         outcomeNotes: existing.outcomeNotes,
+        executiveSummary: existing.executiveSummary,
+        executiveSummaryAt: existing.executiveSummaryAt,
+        executiveSummaryLanguage: existing.executiveSummaryLanguage,
       }
     : { ...workbookDraftFromMatch(match), rollsDeveloped: 1 };
 
@@ -319,9 +400,14 @@ export function buildWorkbookContext(entry: CombinationWorkbookEntry | null): st
   if (entry.rollsDeveloped > 0) {
     parts.push(`Rolls developed with this combo: ${entry.rollsDeveloped}`);
   }
-  if (entry.outcomeDensity || entry.outcomeGrain) {
-    const tags = [entry.outcomeDensity, entry.outcomeGrain].filter(Boolean).join(", ");
-    parts.push(`Recent results: ${tags}`);
+  if (entry.outcomeDensity || entry.outcomeGrain || entry.outcomeContrast || entry.outcomeScan) {
+    const tags = [
+      entry.outcomeDensity ? `density ${entry.outcomeDensity}` : "",
+      entry.outcomeGrain ? `grain ${entry.outcomeGrain}` : "",
+      entry.outcomeContrast ? `contrast ${entry.outcomeContrast}` : "",
+      entry.outcomeScan ? `scan ${entry.outcomeScan}` : "",
+    ].filter(Boolean);
+    parts.push(`Recent results: ${tags.join(", ")}`);
   }
   if (entry.outcomeNotes) {
     parts.push(`Outcome notes: ${entry.outcomeNotes}`);
@@ -529,6 +615,7 @@ export function getEffectivePreferences(film: string): UserPreferences {
     presoakDefault: override.presoakDefault?.trim()
       ? override.presoakDefault.trim()
       : global.presoakDefault,
+    recipeLanguage: global.recipeLanguage,
   };
 }
 

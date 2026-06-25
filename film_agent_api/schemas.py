@@ -64,6 +64,7 @@ class RecipeRequest(BaseModel):
     dilution: str | None = None
     extra_context: str | None = None
     force_regenerate: bool = False
+    language: str | None = None
 
 
 class RecipeResponse(BaseModel):
@@ -78,6 +79,35 @@ class RecipeResponse(BaseModel):
     llm_model: str
     lookup: RecipeLookupItem
     extra_context: str | None = None
+    language: str = "en"
+
+
+class SessionSummaryRequest(BaseModel):
+    film: str
+    developer: str
+    format: str
+    iso: str
+    dilution: str | None = None
+    chart_time: str
+    working_time: str | None = None
+    temperature: str | None = None
+    output_goal: str | None = None
+    developer_prep: str | None = None
+    stop_bath: str | None = None
+    agitation: str | None = None
+    presoak: str | None = None
+    chart_notes: str | None = None
+    journal_context: str | None = None
+    language: str | None = None
+
+
+class SessionSummaryResponse(BaseModel):
+    summary: str
+    prompt_version: str
+    llm_provider: str
+    llm_model: str
+    disclaimer: str
+    language: str = "en"
 
 
 class ErrorResponse(BaseModel):

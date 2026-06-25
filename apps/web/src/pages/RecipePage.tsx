@@ -14,8 +14,10 @@ import { SourcePanel } from "../components/recipe/SourcePanel";
 import { PageHeader } from "../components/layout/PageHeader";
 import { ErrorBanner } from "../components/ui/ErrorBanner";
 import { LoadingSpinner } from "../components/ui/LoadingSpinner";
+import { TagChipGroup } from "../components/ui/TagChipGroup";
 import { formatApiError, type ApiErrorView } from "../lib/apiErrors";
 import { buildRecipeRequest } from "../lib/recipe";
+import { RECIPE_STYLE_TAGS } from "../lib/styleTags";
 import { getCombinationWorkbook, getDefaultRecipe } from "../lib/userLibrary";
 import { useUserLibrary } from "../hooks/useUserLibrary";
 import { Card } from "../components/ui/Card";
@@ -87,6 +89,12 @@ export function RecipePage() {
   const [error, setError] = useState<ApiErrorView | null>(null);
   const [usingDefault, setUsingDefault] = useState(false);
   const [workbookRevision, setWorkbookRevision] = useState(0);
+  const searchForm = navState?.searchForm;
+  const [styleTags, setStyleTags] = useState<string[]>(searchForm?.styleTags ?? []);
+
+  useEffect(() => {
+    setStyleTags(searchForm?.styleTags ?? []);
+  }, [searchForm]);
 
   const generate = useCallback(
     async (request: RecipeNavigationState["request"]) => {
@@ -132,7 +140,6 @@ export function RecipePage() {
 
   const request = navState?.request;
   const lookup = navState?.lookup;
-  const searchForm = navState?.searchForm;
   const match = lookup?.match;
   const workbook = useMemo(() => {
     if (!match) return null;
@@ -147,7 +154,7 @@ export function RecipePage() {
 
   function rebuildRequest(forceRegenerate: boolean) {
     if (!match || !searchForm) return null;
-    return buildRecipeRequest(match, searchForm, forceRegenerate);
+    return buildRecipeRequest(match, { ...searchForm, styleTags }, forceRegenerate);
   }
 
   function handleRegenerate() {
@@ -244,6 +251,15 @@ export function RecipePage() {
           </div>
           {lookup && match ? (
             <div className="space-y-6 print:hidden">
+              {searchForm ? (
+                <TagChipGroup
+                  label="Recipe style tags"
+                  hint="Adjust before regenerate — chart time stays fixed."
+                  options={RECIPE_STYLE_TAGS}
+                  selected={styleTags}
+                  onChange={setStyleTags}
+                />
+              ) : null}
               <CombinationWorkbookPanel
                 match={match}
                 onSaved={() => setWorkbookRevision((value) => value + 1)}

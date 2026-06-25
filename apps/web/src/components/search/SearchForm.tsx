@@ -1,8 +1,10 @@
 import type { FormEvent } from "react";
 import type { FormatItem, SearchFormValues, ScrapedFormat } from "../../api/types";
 import { COMMON_ISO_VALUES } from "../../lib/constants";
+import { RECIPE_STYLE_TAGS } from "../../lib/styleTags";
 import { Button } from "../ui/Button";
 import { FormField, selectClassName, textareaClassName } from "../ui/FormField";
+import { TagChipGroup } from "../ui/TagChipGroup";
 import { FilmAutocomplete } from "./FilmAutocomplete";
 import { DeveloperAutocomplete } from "./DeveloperAutocomplete";
 
@@ -140,6 +142,14 @@ export function SearchForm({
           <option key={iso} value={iso} />
         ))}
       </datalist>
+
+      <TagChipGroup
+        label="Recipe style tags"
+        hint="Optional — shapes tone and workflow in the generated recipe (chart time stays fixed)."
+        options={RECIPE_STYLE_TAGS}
+        selected={values.styleTags}
+        onChange={(styleTags) => onChange({ styleTags })}
+      />
 
       <div className="grid gap-5 lg:grid-cols-2">
         <FormField

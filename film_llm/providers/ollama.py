@@ -1,7 +1,13 @@
 import httpx
 
 from film_llm.providers.base import LLMResponse
-from film_llm.settings import OLLAMA_BASE_URL, OLLAMA_MODEL, OLLAMA_TIMEOUT
+from film_llm.settings import (
+    LLM_MAX_TOKENS,
+    LLM_TEMPERATURE,
+    OLLAMA_BASE_URL,
+    OLLAMA_MODEL,
+    OLLAMA_TIMEOUT,
+)
 
 
 class OllamaProvider:
@@ -19,7 +25,13 @@ class OllamaProvider:
         self.model_name = model
         self._timeout = timeout
 
-    def generate(self, *, system_message: str, user_prompt: str) -> LLMResponse:
+    def generate(
+        self,
+        *,
+        system_message: str,
+        user_prompt: str,
+        max_tokens: int | None = None,
+    ) -> LLMResponse:
         payload = {
             "model": self.model_name,
             "messages": [
@@ -27,6 +39,10 @@ class OllamaProvider:
                 {"role": "user", "content": user_prompt},
             ],
             "stream": False,
+            "options": {
+                "temperature": LLM_TEMPERATURE,
+                "num_predict": max_tokens or LLM_MAX_TOKENS,
+            },
         }
         timeout = httpx.Timeout(self._timeout, connect=10.0)
         try:

@@ -3,6 +3,7 @@ import type {
   DevelopingTimeItem,
   SessionCard,
   SessionCardSource,
+  SessionSummaryRequest,
   UserPreferences,
 } from "../api/types";
 import { computeDilutionVolumes } from "./dilution";
@@ -90,7 +91,45 @@ export function buildSessionCard({
     rollsDeveloped: workbook?.rollsDeveloped ?? 0,
     outcomeDensity: workbook?.outcomeDensity ?? "",
     outcomeGrain: workbook?.outcomeGrain ?? "",
+    outcomeContrast: workbook?.outcomeContrast ?? "",
+    outcomeScan: workbook?.outcomeScan ?? "",
     outcomeNotes: workbook?.outcomeNotes?.trim() || null,
+  };
+}
+
+function formatDeveloperPrep(card: SessionCard): string | undefined {
+  if (card.volumes.dilutionLabel.toLowerCase() === "stock") {
+    return `${card.volumes.developerMl} ml stock ${card.developer}`;
+  }
+  if (card.volumes.computed) {
+    return `${card.volumes.developerMl} ml ${card.developer} + ${card.volumes.waterMl} ml water (${card.volumes.dilutionLabel})`;
+  }
+  return card.volumes.note;
+}
+
+export function buildSessionSummaryRequest(
+  card: SessionCard,
+  journalContext?: string,
+  language: SessionSummaryRequest["language"] = "en",
+): SessionSummaryRequest {
+  return {
+    film: card.film,
+    developer: card.developer,
+    format: card.format,
+    iso: card.iso,
+    dilution: card.dilution,
+    chart_time: card.chartTimeMin,
+    working_time: card.workingTimeIsPersonal ? card.workingTimeMin : null,
+    temperature: card.temperature,
+    output_goal: card.outputGoal,
+    developer_prep: formatDeveloperPrep(card),
+    stop_bath: card.stopBath !== "Not set — add your stop bath in Preferences" ? card.stopBath : null,
+    agitation:
+      card.agitation !== "Not set — add in Preferences" ? card.agitation : null,
+    presoak: card.presoak !== "Not specified" ? card.presoak : null,
+    chart_notes: card.chartNotes,
+    journal_context: journalContext || null,
+    language,
   };
 }
 

@@ -1,6 +1,8 @@
-import type { SessionCard } from "../../api/types";
+import ReactMarkdown from "react-markdown";
+import type { LlmLanguage, SessionCard } from "../../api/types";
 import { DATA_SOURCE_URL } from "../../lib/constants";
 import { formatTemperature } from "../../lib/format";
+import { LLM_LANGUAGES } from "../../lib/llmLanguages";
 import { Badge } from "../ui/Badge";
 import { Button } from "../ui/Button";
 import { Card } from "../ui/Card";
@@ -9,14 +11,26 @@ interface SessionCardPanelProps {
   card: SessionCard;
   onSaveSession?: () => void;
   onGenerateRecipe?: () => void;
+  onGenerateSummary?: () => void;
   onEditWorkbook?: () => void;
   onRecordRoll?: () => void;
   sessionSaved?: boolean;
+  executiveSummary?: string | null;
+  executiveSummaryAt?: string | null;
+  executiveSummaryLanguage?: LlmLanguage | "";
+  executiveSummaryStale?: boolean;
+  summaryLoading?: boolean;
   className?: string;
 }
 
 const densityLabels = { thin: "Thin", ok: "OK", dense: "Dense" } as const;
 const grainLabels = { fine: "Fine grain", ok: "OK", heavy: "Heavy grain" } as const;
+const contrastLabels = { flat: "Flat", ok: "OK", punchy: "Punchy" } as const;
+const scanLabels = {
+  flat: "Flat for scanning",
+  ok: "Scans well",
+  "needs-contrast": "Needs contrast in post",
+} as const;
 
 const sourceTone = {
   chart: "neutral" as const,
@@ -42,14 +56,28 @@ export function SessionCardPanel({
   card,
   onSaveSession,
   onGenerateRecipe,
+  onGenerateSummary,
   onEditWorkbook,
   onRecordRoll,
   sessionSaved = false,
+  executiveSummary = null,
+  executiveSummaryAt = null,
+  executiveSummaryLanguage = "",
+  executiveSummaryStale = false,
+  summaryLoading = false,
   className = "",
 }: SessionCardPanelProps) {
   function handlePrint() {
     window.print();
   }
+
+  const summaryLanguageLabel =
+    LLM_LANGUAGES.find((option) => option.code === executiveSummaryLanguage)?.label ?? null;
+  const summarySavedLabel = executiveSummaryAt
+    ? new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" }).format(
+        new Date(executiveSummaryAt),
+      )
+    : null;
 
   return (
     <Card title="Session card" className={`session-card print:border-none print:shadow-none ${className}`}>
@@ -107,22 +135,63 @@ export function SessionCardPanel({
         </div>
       </dl>
 
-      {card.outcomeDensity || card.outcomeGrain || card.outcomeNotes ? (
+      {card.outcomeDensity ||
+      card.outcomeGrain ||
+      card.outcomeContrast ||
+      card.outcomeScan ||
+      card.outcomeNotes ? (
         <section className="mt-5 rounded-lg border border-border bg-surface-elevated/60 px-4 py-3">
           <div className="mb-2 flex flex-wrap items-center gap-2">
-            <h3 className="text-xs font-semibold uppercase tracking-wide text-muted">Last results</h3>
+            <h3 className="text-xs font-semibold uppercase tracking-wide text-muted">Development journal</h3>
             <Badge tone="warning">Your notes</Badge>
           </div>
-          {card.outcomeDensity || card.outcomeGrain ? (
+          {card.outcomeDensity ||
+          card.outcomeGrain ||
+          card.outcomeContrast ||
+          card.outcomeScan ? (
             <p className="text-sm text-ink">
-              {card.outcomeDensity ? densityLabels[card.outcomeDensity] : null}
-              {card.outcomeDensity && card.outcomeGrain ? " · " : null}
-              {card.outcomeGrain ? grainLabels[card.outcomeGrain] : null}
+              {[
+                card.outcomeDensity ? densityLabels[card.outcomeDensity] : null,
+                card.outcomeGrain ? grainLabels[card.outcomeGrain] : null,
+                card.outcomeContrast ? contrastLabels[card.outcomeContrast] : null,
+                card.outcomeScan ? scanLabels[card.outcomeScan] : null,
+              ]
+                .filter(Boolean)
+                .join(" · ")}
             </p>
           ) : null}
           {card.outcomeNotes ? (
             <p className="mt-2 text-sm leading-6 text-ink">{card.outcomeNotes}</p>
           ) : null}
+        </section>
+      ) : null}
+
+      {executiveSummary ? (
+        <section className="mt-5 rounded-lg border border-accent/30 bg-accent/5 px-4 py-4 print:border-border print:bg-transparent">
+          <div className="mb-2 flex flex-wrap items-center gap-2">
+            <h3 className="text-xs font-semibold uppercase tracking-wide text-muted">
+              Executive summary
+            </h3>
+            <Badge tone="accent">LLM</Badge>
+            {summarySavedLabel ? (
+              <Badge tone="neutral">{`Saved ${summarySavedLabel}`}</Badge>
+            ) : null}
+            {summaryLanguageLabel ? (
+              <Badge tone="neutral">{summaryLanguageLabel}</Badge>
+            ) : null}
+          </div>
+          {executiveSummaryStale ? (
+            <p className="mb-2 text-xs text-warning">
+              Journal notes changed after this summary — regenerate for an updated brief.
+            </p>
+          ) : null}
+          <div className="prose prose-sm max-w-none text-ink prose-headings:font-semibold prose-p:my-2 prose-ul:my-2">
+            <ReactMarkdown>{executiveSummary}</ReactMarkdown>
+          </div>
+          <p className="mt-3 text-xs text-muted print:hidden">
+            Saved with this combo in your library backup. Not a full recipe — verify all times
+            independently.
+          </p>
         </section>
       ) : null}
 
@@ -207,6 +276,16 @@ export function SessionCardPanel({
         <Button type="button" variant="secondary" onClick={handlePrint}>
           Print card
         </Button>
+        {onGenerateSummary ? (
+          <Button
+            type="button"
+            variant="secondary"
+            disabled={summaryLoading}
+            onClick={onGenerateSummary}
+          >
+            {summaryLoading ? "Summarizing…" : executiveSummary ? "Regenerate summary" : "Executive summary (LLM)"}
+          </Button>
+        ) : null}
         {onGenerateRecipe ? (
           <Button type="button" onClick={onGenerateRecipe}>
             Full recipe (LLM)

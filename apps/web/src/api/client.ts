@@ -10,6 +10,8 @@ import type {
   RecipeRequest,
   RecipeResponse,
   SearchResultItem,
+  SessionSummaryRequest,
+  SessionSummaryResponse,
 } from "./types";
 
 const API_BASE = import.meta.env.VITE_API_URL?.replace(/\/$/, "") || "/api";
@@ -104,6 +106,13 @@ export const filmApi = {
 
   createRecipe(body: RecipeRequest): Promise<RecipeResponse> {
     return request<RecipeResponse>("/recipes", {
+      method: "POST",
+      body: JSON.stringify(body),
+    });
+  },
+
+  createSessionSummary(body: SessionSummaryRequest): Promise<SessionSummaryResponse> {
+    return request<SessionSummaryResponse>("/session-summaries", {
       method: "POST",
       body: JSON.stringify(body),
     });

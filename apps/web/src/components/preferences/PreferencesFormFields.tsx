@@ -1,5 +1,6 @@
 import type { UserPreferences } from "../../api/types";
-import { FormField, textareaClassName } from "../ui/FormField";
+import { LLM_LANGUAGES } from "../../lib/llmLanguages";
+import { FormField, selectClassName, textareaClassName } from "../ui/FormField";
 
 interface PreferencesFormFieldsProps {
   values: UserPreferences;
@@ -69,6 +70,27 @@ export function PreferencesFormFields({
         placeholder="rodinal, d-76, xtol"
         id={`${idPrefix}-developers`}
       />
+
+      <label className="block" htmlFor={`${idPrefix}-recipe-language`}>
+        <span className="mb-1 block text-sm font-medium text-ink">Recipe language (LLM)</span>
+        <span className="mb-1 block text-xs text-muted">
+          Language for generated recipes and session executive summaries. UI stays in English.
+        </span>
+        <select
+          id={`${idPrefix}-recipe-language`}
+          value={values.recipeLanguage}
+          onChange={(event) =>
+            onChange({ recipeLanguage: event.target.value as UserPreferences["recipeLanguage"] })
+          }
+          className={selectClassName}
+        >
+          {LLM_LANGUAGES.map((option) => (
+            <option key={option.code} value={option.code}>
+              {option.label}
+            </option>
+          ))}
+        </select>
+      </label>
 
       {showDarkroomSetup ? (
         <>

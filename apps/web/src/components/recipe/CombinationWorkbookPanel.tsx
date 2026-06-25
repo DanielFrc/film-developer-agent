@@ -2,8 +2,10 @@ import { FormEvent, useEffect, useState } from "react";
 import type {
   CombinationWorkbookEntry,
   DevelopingTimeItem,
+  OutcomeContrast,
   OutcomeDensity,
   OutcomeGrain,
+  OutcomeScan,
   OutputGoal,
 } from "../../api/types";
 import {
@@ -37,6 +39,20 @@ const GRAIN_OPTIONS: { value: OutcomeGrain | ""; label: string }[] = [
   { value: "heavy", label: "Heavy" },
 ];
 
+const CONTRAST_OPTIONS: { value: OutcomeContrast | ""; label: string }[] = [
+  { value: "", label: "Not rated" },
+  { value: "flat", label: "Flat" },
+  { value: "ok", label: "OK" },
+  { value: "punchy", label: "Punchy" },
+];
+
+const SCAN_OPTIONS: { value: OutcomeScan | ""; label: string }[] = [
+  { value: "", label: "Not rated" },
+  { value: "flat", label: "Flat for scanning" },
+  { value: "ok", label: "Scans well" },
+  { value: "needs-contrast", label: "Needs contrast in post" },
+];
+
 function emptyDraft(match: DevelopingTimeItem): Omit<CombinationWorkbookEntry, "updatedAt"> {
   return {
     film: match.film,
@@ -53,7 +69,12 @@ function emptyDraft(match: DevelopingTimeItem): Omit<CombinationWorkbookEntry, "
     rollsDeveloped: 0,
     outcomeDensity: "",
     outcomeGrain: "",
+    outcomeContrast: "",
+    outcomeScan: "",
     outcomeNotes: "",
+    executiveSummary: "",
+    executiveSummaryAt: "",
+    executiveSummaryLanguage: "",
   };
 }
 
@@ -73,7 +94,12 @@ function toDraft(entry: CombinationWorkbookEntry): Omit<CombinationWorkbookEntry
     rollsDeveloped: entry.rollsDeveloped,
     outcomeDensity: entry.outcomeDensity,
     outcomeGrain: entry.outcomeGrain,
+    outcomeContrast: entry.outcomeContrast,
+    outcomeScan: entry.outcomeScan,
     outcomeNotes: entry.outcomeNotes,
+    executiveSummary: "",
+    executiveSummaryAt: "",
+    executiveSummaryLanguage: "",
   };
 }
 
@@ -136,7 +162,7 @@ export function CombinationWorkbookPanel({
   }
 
   return (
-    <Card title="My notes" className={className}>
+    <Card title="Development journal" className={className}>
       <div className="mb-4 space-y-2">
         <Badge tone="warning">Your annotations — not from chart</Badge>
         <p className="text-sm text-muted">
@@ -214,8 +240,11 @@ export function CombinationWorkbookPanel({
         </label>
 
         <div className="rounded-lg border border-border px-4 py-4">
-          <h4 className="mb-3 text-sm font-semibold text-ink">After developing (your results)</h4>
-          <div className="grid gap-4 sm:grid-cols-2">
+          <h4 className="mb-1 text-sm font-semibold text-ink">After developing</h4>
+          <p className="mb-3 text-xs text-muted">
+            Log results from your last roll — feeds Regenerate with notes and your session card.
+          </p>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <label className="block">
               <span className="mb-1 block text-sm font-medium text-ink">Negative density</span>
               <select
@@ -248,21 +277,56 @@ export function CombinationWorkbookPanel({
                 ))}
               </select>
             </label>
+            <label className="block">
+              <span className="mb-1 block text-sm font-medium text-ink">Contrast</span>
+              <select
+                value={draft.outcomeContrast}
+                onChange={(event) =>
+                  setDraft((c) => ({
+                    ...c,
+                    outcomeContrast: event.target.value as OutcomeContrast | "",
+                  }))
+                }
+                className={selectClassName}
+              >
+                {CONTRAST_OPTIONS.map((option) => (
+                  <option key={option.label} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="block sm:col-span-2 lg:col-span-3">
+              <span className="mb-1 block text-sm font-medium text-ink">Scan result</span>
+              <select
+                value={draft.outcomeScan}
+                onChange={(event) =>
+                  setDraft((c) => ({ ...c, outcomeScan: event.target.value as OutcomeScan | "" }))
+                }
+                className={selectClassName}
+              >
+                {SCAN_OPTIONS.map((option) => (
+                  <option key={option.label} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </label>
           </div>
           <label className="mt-4 block">
-            <span className="mb-1 block text-sm font-medium text-ink">Outcome notes</span>
+            <span className="mb-1 block text-sm font-medium text-ink">Journal notes</span>
             <textarea
               value={draft.outcomeNotes}
               onChange={(event) => setDraft((c) => ({ ...c, outcomeNotes: event.target.value }))}
               rows={3}
               className={textareaClassName}
-              placeholder="e.g. Too dense for scanning — reduce 30s next time"
+              placeholder="e.g. Roll 3 too dense for scanning — pull 30s next time"
             />
           </label>
         </div>
 
         <div className="flex flex-wrap gap-2">
-          <Button type="submit">Save notes</Button>
+          <Button type="submit">Save journal</Button>
           <Button type="button" variant="secondary" onClick={handleClear}>
             Clear
           </Button>
