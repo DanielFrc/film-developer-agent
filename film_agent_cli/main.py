@@ -194,6 +194,15 @@ def recipe(
     force: Annotated[
         bool, typer.Option("--force", help="Bypass recipe cache and call the LLM.")
     ] = False,
+    language: Annotated[
+        str | None,
+        typer.Option(
+            "--language",
+            "--lang",
+            "-l",
+            help="Recipe language code (en, es). Defaults to RECIPE_LANGUAGE env.",
+        ),
+    ] = None,
     output: Annotated[
         Path | None, typer.Option("--output", "-o", help="Write recipe markdown to file.")
     ] = None,
@@ -209,6 +218,7 @@ def recipe(
             iso=iso,
             dilution=dilution,
             extra_context=extra_context,
+            language=language,
             force_regenerate=force,
         )
     except (RecipeLookupError, RecipeAmbiguousError, ValueError, RuntimeError) as exc:

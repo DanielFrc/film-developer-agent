@@ -37,6 +37,10 @@ export interface FilmEnrichment {
 
 export type OutcomeDensity = "thin" | "ok" | "dense";
 export type OutcomeGrain = "fine" | "ok" | "heavy";
+export type OutcomeContrast = "flat" | "ok" | "punchy";
+export type OutcomeScan = "flat" | "ok" | "needs-contrast";
+
+export type LlmLanguage = "en" | "es";
 
 /** Per-lookup-row annotations — not written to gold */
 export interface CombinationWorkbookEntry {
@@ -54,7 +58,13 @@ export interface CombinationWorkbookEntry {
   rollsDeveloped: number;
   outcomeDensity: OutcomeDensity | "";
   outcomeGrain: OutcomeGrain | "";
+  outcomeContrast: OutcomeContrast | "";
+  outcomeScan: OutcomeScan | "";
   outcomeNotes: string;
+  /** LLM executive summary — personal, client-side only */
+  executiveSummary: string;
+  executiveSummaryAt: string;
+  executiveSummaryLanguage: LlmLanguage | "";
   updatedAt: string;
 }
 
@@ -89,6 +99,8 @@ export interface SessionCard {
   rollsDeveloped: number;
   outcomeDensity: OutcomeDensity | "";
   outcomeGrain: OutcomeGrain | "";
+  outcomeContrast: OutcomeContrast | "";
+  outcomeScan: OutcomeScan | "";
   outcomeNotes: string | null;
 }
 
@@ -170,6 +182,35 @@ export interface RecipeRequest {
   dilution?: string | null;
   extra_context?: string | null;
   force_regenerate?: boolean;
+  language?: LlmLanguage | null;
+}
+
+export interface SessionSummaryRequest {
+  film: string;
+  developer: string;
+  format: string;
+  iso: string;
+  dilution?: string | null;
+  chart_time: string;
+  working_time?: string | null;
+  temperature?: string | null;
+  output_goal?: string | null;
+  developer_prep?: string | null;
+  stop_bath?: string | null;
+  agitation?: string | null;
+  presoak?: string | null;
+  chart_notes?: string | null;
+  journal_context?: string | null;
+  language?: LlmLanguage | null;
+}
+
+export interface SessionSummaryResponse {
+  summary: string;
+  prompt_version: string;
+  llm_provider: string;
+  llm_model: string;
+  disclaimer: string;
+  language: LlmLanguage;
 }
 
 export interface RecipeResponse {
@@ -184,6 +225,7 @@ export interface RecipeResponse {
   llm_model: string;
   lookup: RecipeLookupItem;
   extra_context?: string | null;
+  language?: LlmLanguage;
 }
 
 export interface ApiError {
@@ -223,6 +265,7 @@ export interface SearchFormValues {
   dilution: string;
   temperatureUnit: "C" | "F";
   agitationMethod: string;
+  styleTags: string[];
   extraContext: string;
 }
 
@@ -239,6 +282,7 @@ export const DEFAULT_SEARCH_FORM: SearchFormValues = {
   dilution: "",
   temperatureUnit: "C",
   agitationMethod: "",
+  styleTags: [],
   extraContext: "",
 };
 
@@ -361,6 +405,8 @@ export interface UserPreferences {
   stopBathRecipe: string;
   /** Default pre-soak when chart notes are silent */
   presoakDefault: string;
+  /** LLM output language for recipes and session summaries */
+  recipeLanguage: LlmLanguage;
 }
 
 /** Per-film overrides — empty fields inherit from global preferences */

@@ -1,7 +1,12 @@
 from openai import OpenAI
 
 from film_llm.providers.base import LLMResponse
-from film_llm.settings import OPENAI_API_KEY, OPENAI_MODEL
+from film_llm.settings import (
+    LLM_MAX_TOKENS,
+    LLM_TEMPERATURE,
+    OPENAI_API_KEY,
+    OPENAI_MODEL,
+)
 
 
 class OpenAIProvider:
@@ -14,7 +19,13 @@ class OpenAIProvider:
         self._client = OpenAI(api_key=api_key)
         self.model_name = model
 
-    def generate(self, *, system_message: str, user_prompt: str) -> LLMResponse:
+    def generate(
+        self,
+        *,
+        system_message: str,
+        user_prompt: str,
+        max_tokens: int | None = None,
+    ) -> LLMResponse:
         try:
             response = self._client.chat.completions.create(
                 model=self.model_name,
@@ -22,7 +33,8 @@ class OpenAIProvider:
                     {"role": "system", "content": system_message},
                     {"role": "user", "content": user_prompt},
                 ],
-                temperature=0.4,
+                temperature=LLM_TEMPERATURE,
+                max_tokens=max_tokens or LLM_MAX_TOKENS,
             )
         except Exception as exc:
             raise RuntimeError(

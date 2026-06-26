@@ -1,5 +1,6 @@
 import type { RecipeRequest, SearchFormValues } from "../api/types";
 import { buildExtraContext } from "./format";
+import { buildStyleTagsContext } from "./styleTags";
 import {
   buildPreferencesContext,
   buildWorkbookContext,
@@ -25,7 +26,7 @@ export function buildRecipeRequest(
   },
   form: Pick<
     SearchFormValues,
-    "agitationMethod" | "extraContext" | "isoNominal" | "isoExposed"
+    "agitationMethod" | "styleTags" | "extraContext" | "isoNominal" | "isoExposed"
   >,
   forceRegenerate = false,
 ): RecipeRequest {
@@ -53,8 +54,10 @@ export function buildRecipeRequest(
     extra_context: mergeExtraContext(
       buildPreferencesContext(preferences),
       buildWorkbookContext(workbook),
+      buildStyleTagsContext(form.styleTags),
       formContext,
     ),
+    language: preferences.recipeLanguage,
     force_regenerate: forceRegenerate,
   };
 }

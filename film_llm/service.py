@@ -2,6 +2,7 @@ from dataclasses import asdict, dataclass
 
 from film_core.query import GoldStore, lookup_developing_times
 from film_core.query.lookup import DevelopingTimeMatch
+from film_llm.languages import normalize_language
 from film_llm.prompt import PromptContext, normalize_extra_context, render_recipe_prompt
 from film_llm.providers import LLMProvider, get_llm_provider
 from film_llm.recipe_cache import (
@@ -52,6 +53,7 @@ class RecipeResult:
     llm_model: str
     lookup: RecipeLookup
     extra_context: str | None = None
+    language: str = "en"
 
     def to_dict(self) -> dict:
         payload = asdict(self)
@@ -78,9 +80,11 @@ class RecipeService:
         iso: str,
         dilution: str | None = None,
         extra_context: str | None = None,
+        language: str | None = None,
         force_regenerate: bool = False,
     ) -> RecipeResult:
         normalized_context = normalize_extra_context(extra_context)
+        resolved_language = normalize_language(language, default=RECIPE_LANGUAGE)
         lookup = self._resolve_lookup(
             film=film,
             developer=developer,
@@ -100,7 +104,7 @@ class RecipeService:
             prompt_version=PROMPT_VERSION,
             llm_provider=self._llm.provider_name,
             llm_model=self._llm.model_name,
-            language=RECIPE_LANGUAGE,
+            language=resolved_language,
             extra_context=normalized_context or "",
         )
         cache_key = build_cache_key(cache_params)
@@ -120,6 +124,7 @@ class RecipeService:
                     llm_model=cached.llm_model,
                     lookup=lookup,
                     extra_context=normalized_context,
+                    language=resolved_language,
                 )
 
         prompt = render_recipe_prompt(
@@ -133,6 +138,7 @@ class RecipeService:
                 dilution=lookup.dilution,
                 notes=lookup.notes,
                 extra_context=normalized_context,
+                language=resolved_language,
             )
         )
         llm_response = self._llm.generate(
@@ -160,6 +166,7 @@ class RecipeService:
             llm_model=llm_response.model,
             lookup=lookup,
             extra_context=normalized_context,
+            language=resolved_language,
         )
 
     def _resolve_lookup(

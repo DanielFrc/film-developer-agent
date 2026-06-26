@@ -4,6 +4,27 @@ All notable changes to this project are documented here. The format is based on 
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-06-24
+
+Photographer workflow polish: journal fields, style tags, session LLM brief, LAN dev, and bilingual LLM output.
+
+### Added
+
+- **Recipe style tags** — chip picker on Search and Recipe (cinematic, fine grain, flat for scanning, etc.) merged into LLM `extra_context`
+- **Development journal** — contrast and scan outcome fields; workbook renamed; results on session card
+- **Session executive summary** — `POST /session-summaries` and **Executive summary (LLM)** on session card (brief from notes, not a full recipe); persisted per combo in workbook and library backup
+- **LLM language** — Preferences **Recipe language** (`en` / `es`); recipes and session summaries honor `language` on API requests; CLI `--language` / `--lang`
+- **LAN dev access** — `./scripts/dev.sh` binds Vite on `0.0.0.0` and prints a Wi-Fi URL for phones/tablets
+
+### Changed
+
+- **LLM tuning** — `LLM_TEMPERATURE` (default `0.3`), `LLM_MAX_TOKENS` (default `1200`), `SESSION_SUMMARY_MAX_TOKENS` (default `500`); recipe `PROMPT_VERSION` 3
+
+### Fixed
+
+- **`pyproject.toml`** — dependencies under `[project]`; removed deprecated MIT license classifier (PEP 639)
+- **GitHub Actions** — Node 24–compatible action versions; CI install on current setuptools
+
 ## [0.2.0] - 2026-06-23
 
 Personal workflow release: Library IA, session cards, developer compare, PWA, and per-combo workbook log.
@@ -52,5 +73,6 @@ First portfolio-ready release: end-to-end local-first film development assistant
 - Recipe responses include source attribution and safety disclaimer.
 - No LLM provider keys in the browser UI.
 
+[0.2.1]: https://github.com/DanielFrc/film-developer-agent/releases/tag/v0.2.1
 [0.2.0]: https://github.com/DanielFrc/film-developer-agent/releases/tag/v0.2.0
 [0.1.0]: https://github.com/DanielFrc/film-developer-agent/releases/tag/v0.1.0

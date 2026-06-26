@@ -1,0 +1,50 @@
+Generate a short executive summary for a black-and-white film development session.
+
+Session data:
+* Film: {{ film }} ({{ format }})
+* Developer: {{ developer }}
+* ISO / EI: {{ iso }}
+* Chart developing time: {{ chart_time }} minutes (authoritative — do not change)
+* Working time (photographer): {{ working_time or chart_time }} minutes
+{% if temperature %}
+* Temperature: {{ temperature }}°C
+{% endif %}
+* Dilution: {{ dilution }}
+{% if output_goal %}
+* Output goal: {{ output_goal }}
+{% endif %}
+{% if developer_prep %}
+* Developer prep: {{ developer_prep }}
+{% endif %}
+{% if stop_bath %}
+* Stop bath: {{ stop_bath }}
+{% endif %}
+{% if agitation %}
+* Agitation: {{ agitation }}
+{% endif %}
+{% if presoak %}
+* Pre-soak: {{ presoak }}
+{% endif %}
+{% if chart_notes %}
+* Chart notes: {{ chart_notes }}
+{% endif %}
+{% if journal_context %}
+
+Photographer journal and workbook notes:
+{{ journal_context }}
+{% endif %}
+
+Write a concise executive summary (max ~150 words) in markdown with:
+1. **Session at a glance** — one sentence on film, developer, and goal.
+2. **Watch for** — 2–3 bullets on risks or focus areas from chart notes and journal (density, grain, scan, agitation).
+3. **Next roll** — one actionable tweak if journal notes suggest it; otherwise what to keep consistent.
+
+Rules:
+- Do NOT write a step-by-step development recipe.
+- Do NOT invent or change the chart time of {{ chart_time }} minutes.
+- If journal notes are empty, focus on chart data and output goal only.
+- Be practical for the darkroom, not generic photography advice.
+{% if response_language_instruction %}
+
+{{ response_language_instruction }}
+{% endif %}

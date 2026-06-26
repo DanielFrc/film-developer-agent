@@ -88,6 +88,12 @@ OPENAI_MODEL=gpt-4o-mini
 
 Restart `film-api` after changing `.env`.
 
+### Recipe language (English / Spanish)
+
+- **Web UI:** Preferences → **Recipe language (LLM)** — applies to full recipes and session executive summaries. UI labels stay in English.
+- **API / CLI:** pass `language` (`en` or `es`) on `POST /recipes` and `POST /session-summaries`, or `film-agent recipe --lang es`.
+- **Server default:** `RECIPE_LANGUAGE=en` in `.env` when the client omits `language`.
+
 ---
 
 ## Path 1 — CLI only
@@ -147,9 +153,17 @@ This script:
 
 1. Loads `.env`
 2. Warns if gold data is missing
-3. Starts `film-api` on port **8000**
-4. Starts Vite on port **5173** (runs `npm install` in `apps/web` if needed)
-5. Stops both on **Ctrl+C**
+3. Starts `film-api` on port **8000** (listens on all interfaces)
+4. Starts Vite on port **5173** with `--host 0.0.0.0` (reachable on your LAN)
+5. Prints a **LAN URL** for phones/tablets on the same Wi-Fi
+6. Runs `npm install` in `apps/web` if needed
+7. Stops both on **Ctrl+C**
+
+### Phone / tablet on the same Wi-Fi
+
+After `./scripts/dev.sh`, open the **LAN** URL printed in the terminal (e.g. `http://192.168.1.42:5173`). Keep `apps/web/.env` with `VITE_API_URL=/api` so the browser uses Vite's proxy — do not point mobile browsers at `localhost:8000`.
+
+Requirements: same Wi-Fi (not guest network), macOS firewall allows incoming on port 5173. Library data stays in each browser's localStorage unless you export/import a backup.
 
 ### Manual (two terminals)
 
@@ -167,10 +181,10 @@ film-api
 cd apps/web
 cp -n .env.example .env    # first time only
 npm install
-npm run dev
+npm run dev -- --host 0.0.0.0
 ```
 
-Open [http://localhost:5173](http://localhost:5173). Vite proxies `/api` → `http://localhost:8000`.
+Open [http://localhost:5173](http://localhost:5173) (or `http://<your-lan-ip>:5173` from other devices). Vite proxies `/api` → `http://localhost:8000`.
 
 ### What you can do in the UI
 
@@ -196,7 +210,7 @@ docker compose up --build api web
 
 | Service | URL |
 |---------|-----|
-| Web UI | [http://localhost:5173](http://localhost:5173) |
+| Web UI | [http://localhost:5173](http://localhost:5173) (or `http://<your-lan-ip>:5173` on the same Wi-Fi) |
 | API | [http://localhost:8000](http://localhost:8000) |
 | Health | [http://localhost:8000/health](http://localhost:8000/health) |
 

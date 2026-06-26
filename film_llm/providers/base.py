@@ -13,4 +13,10 @@ class LLMProvider(Protocol):
     provider_name: str
     model_name: str
 
-    def generate(self, *, system_message: str, user_prompt: str) -> LLMResponse: ...
+    def generate(
+        self,
+        *,
+        system_message: str,
+        user_prompt: str,
+        max_tokens: int | None = None,
+    ) -> LLMResponse: ...

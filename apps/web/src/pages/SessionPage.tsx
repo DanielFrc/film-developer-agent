@@ -1,18 +1,24 @@
 import { useMemo, useState } from "react";
 import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
 import type { DevelopingTimeItem, SessionNavigationState, ScrapedFormat } from "../api/types";
+import { filmApi } from "../api/client";
 import { CombinationWorkbookPanel } from "../components/recipe/CombinationWorkbookPanel";
 import { SessionCardPanel } from "../components/session/SessionCardPanel";
 import { PageHeader } from "../components/layout/PageHeader";
+import { ErrorBanner } from "../components/ui/ErrorBanner";
 import { useRecipeNavigation } from "../hooks/useRecipeNavigation";
 import { useUserLibrary } from "../hooks/useUserLibrary";
 import { buildLookupResultView } from "../lib/lookup";
-import { buildSessionCard, matchFromSavedCombination } from "../lib/sessionCard";
+import { formatApiError, type ApiErrorView } from "../lib/apiErrors";
+import { buildSessionCard, buildSessionSummaryRequest, matchFromSavedCombination } from "../lib/sessionCard";
 import { DEFAULT_SEARCH_FORM } from "../api/types";
 import {
+  buildWorkbookContext,
   getCombinationWorkbook,
   getEffectivePreferences,
   incrementWorkbookRolls,
+  isExecutiveSummaryStale,
+  saveWorkbookExecutiveSummary,
 } from "../lib/userLibrary";
 
 function resolveMatch(state: SessionNavigationState | null): DevelopingTimeItem | null {
@@ -32,6 +38,8 @@ export function SessionPage() {
   const [workbookRevision, setWorkbookRevision] = useState(0);
   const [sessionSaved, setSessionSaved] = useState(false);
   const [showWorkbook, setShowWorkbook] = useState(false);
+  const [summaryLoading, setSummaryLoading] = useState(false);
+  const [summaryError, setSummaryError] = useState<ApiErrorView | null>(null);
 
   const workbook = useMemo(() => {
     if (!match) return null;
@@ -52,6 +60,9 @@ export function SessionPage() {
       workbook,
     });
   }, [match, workbook, workbookRevision]);
+
+  const executiveSummary = workbook?.executiveSummary.trim() || null;
+  const executiveSummaryStale = isExecutiveSummaryStale(workbook);
 
   if (!match || !card) {
     return <Navigate to="/search" replace />;
@@ -88,11 +99,30 @@ export function SessionPage() {
     });
   }
 
+  async function handleGenerateSummary() {
+    if (!card) return;
+    setSummaryLoading(true);
+    setSummaryError(null);
+    try {
+      const journalContext = buildWorkbookContext(workbook);
+      const preferences = getEffectivePreferences(match!.film);
+      const response = await filmApi.createSessionSummary(
+        buildSessionSummaryRequest(card, journalContext, preferences.recipeLanguage),
+      );
+      saveWorkbookExecutiveSummary(match!, response.summary, response.language);
+      setWorkbookRevision((value) => value + 1);
+    } catch (err) {
+      setSummaryError(formatApiError(err, "recipe"));
+    } finally {
+      setSummaryLoading(false);
+    }
+  }
+
   return (
     <div className="print:text-black">
       <PageHeader
         title="Session card"
-        description="Sink-ready checklist from chart data and your preferences — no LLM required."
+        description="Sink-ready checklist from chart data and your preferences. Optional LLM executive summary from your journal — no full recipe required."
         className="print:hidden"
         action={
           <button
@@ -109,11 +139,27 @@ export function SessionPage() {
         card={card}
         onSaveSession={handleSaveSession}
         onGenerateRecipe={handleGenerateRecipe}
+        onGenerateSummary={handleGenerateSummary}
         onEditWorkbook={() => setShowWorkbook((value) => !value)}
         onRecordRoll={handleRecordRoll}
         sessionSaved={sessionSaved}
+        executiveSummary={executiveSummary}
+        executiveSummaryAt={workbook?.executiveSummaryAt || null}
+        executiveSummaryLanguage={workbook?.executiveSummaryLanguage || ""}
+        executiveSummaryStale={executiveSummaryStale}
+        summaryLoading={summaryLoading}
         className="mb-6"
       />
+
+      {summaryError ? (
+        <div className="mb-6 print:hidden">
+          <ErrorBanner
+            message={summaryError.message}
+            hint={summaryError.hint}
+            onRetry={handleGenerateSummary}
+          />
+        </div>
+      ) : null}
 
       {showWorkbook ? (
         <CombinationWorkbookPanel

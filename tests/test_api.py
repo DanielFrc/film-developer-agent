@@ -1,17 +1,21 @@
 import pytest
 from fastapi.testclient import TestClient
 
-from film_agent_api.main import app, get_recipe_service
+from film_agent_api.main import app, get_recipe_service, get_session_summary_service
 from film_llm.providers import MockLLMProvider
 from film_llm.recipe_cache import RecipeCacheService
 from film_llm.service import RecipeService
+from film_llm.session_summary import SessionSummaryService
 
 
 @pytest.fixture
 def api_client(gold_dataset, tmp_path):
     cache = RecipeCacheService(db_path=tmp_path / "api_recipes.db")
-    service = RecipeService(cache=cache, llm_provider=MockLLMProvider())
+    mock = MockLLMProvider()
+    service = RecipeService(cache=cache, llm_provider=mock)
+    summary_service = SessionSummaryService(llm_provider=mock)
     app.dependency_overrides[get_recipe_service] = lambda: service
+    app.dependency_overrides[get_session_summary_service] = lambda: summary_service
     yield TestClient(app)
     app.dependency_overrides.clear()
 
@@ -99,6 +103,40 @@ def test_create_recipe_with_extra_context(api_client):
     assert response.status_code == 200
     assert response.json()["extra_context"] == "stand development, grainy look"
     assert response.json()["cached"] is False
+
+
+def test_create_session_summary(api_client):
+    body = {
+        "film": "Ilford HP5 Plus",
+        "developer": "D-76",
+        "format": "120",
+        "iso": "400",
+        "chart_time": "9.5",
+        "dilution": "stock",
+        "journal_context": "grain heavy",
+    }
+    response = api_client.post("/session-summaries", json=body)
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert "Session at a glance" in payload["summary"]
+    assert payload["llm_provider"] == "mock"
+    assert payload["disclaimer"]
+
+
+def test_create_recipe_spanish_language(api_client):
+    body = {
+        "film": "Ilford HP5 Plus",
+        "developer": "Rodinal",
+        "format": "120",
+        "iso": "400",
+        "dilution": "1+50",
+        "language": "es",
+    }
+    response = api_client.post("/recipes", json=body)
+
+    assert response.status_code == 200
+    assert response.json()["language"] == "es"
 
 
 def test_explorer_schema_gold(api_client):
