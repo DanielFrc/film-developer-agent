@@ -1,12 +1,21 @@
 import { useCallback, useState } from "react";
-import type { FilmPreferencesOverride, SavedCombination, SavedRecipe, UserPreferences } from "../api/types";
+import type {
+  DevelopedRoll,
+  FilmPreferencesOverride,
+  SavedCombination,
+  SavedRecipe,
+  UserPreferences,
+} from "../api/types";
 import {
   listFilmPreferenceEntries,
+  loadDevelopedRolls,
   loadFavoriteDevelopers,
   loadFavoriteFilms,
   loadSavedCombinations,
   loadSavedRecipes,
   loadUserPreferences,
+  logDevelopedRoll,
+  removeDevelopedRoll,
   removeFilmPreferenceOverride,
   removeSavedCombination,
   recordFavoriteLookup,
@@ -26,12 +35,14 @@ export function useUserLibrary() {
   const [recipes, setRecipes] = useState(() => loadSavedRecipes());
   const [favoriteFilms, setFavoriteFilms] = useState(() => loadFavoriteFilms());
   const [favoriteDevelopers, setFavoriteDevelopers] = useState(() => loadFavoriteDevelopers());
+  const [developedRolls, setDevelopedRolls] = useState(() => loadDevelopedRolls());
 
   const refresh = useCallback(() => {
     setCombinations(loadSavedCombinations());
     setRecipes(loadSavedRecipes());
     setFavoriteFilms(loadFavoriteFilms());
     setFavoriteDevelopers(loadFavoriteDevelopers());
+    setDevelopedRolls(loadDevelopedRolls());
   }, []);
 
   const addCombination = useCallback(
@@ -74,11 +85,33 @@ export function useUserLibrary() {
     setFavoriteDevelopers(loadFavoriteDevelopers());
   }, []);
 
+  const addDevelopedRoll = useCallback(
+    (
+      entry: Omit<DevelopedRoll, "id" | "createdAt">,
+      match: {
+        film: string;
+        developer: string;
+        format: string;
+        iso: string;
+        dilution?: string | null;
+      },
+    ) => {
+      logDevelopedRoll(entry, match);
+      setDevelopedRolls(loadDevelopedRolls());
+    },
+    [],
+  );
+
+  const deleteDevelopedRoll = useCallback((id: string) => {
+    setDevelopedRolls(removeDevelopedRoll(id));
+  }, []);
+
   return {
     combinations,
     recipes,
     favoriteFilms,
     favoriteDevelopers,
+    developedRolls,
     refresh,
     addCombination,
     deleteCombination,
@@ -88,6 +121,8 @@ export function useUserLibrary() {
     starFilm,
     starDeveloper,
     recordLookup,
+    addDevelopedRoll,
+    deleteDevelopedRoll,
   };
 }
 

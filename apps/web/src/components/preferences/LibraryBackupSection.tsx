@@ -49,9 +49,9 @@ export function LibraryBackupSection({ onImported }: LibraryBackupSectionProps) 
   return (
     <Card title="Library backup">
       <p className="mb-4 text-sm text-muted">
-        Export or restore saved sessions, recipes, defaults, favorites, preferences, film notes,
-        and combination workbooks from this browser. v3 backups include darkroom preferences;
-        v1–v2 imports remain supported.
+        Export or restore saved sessions, developed rolls, recipes, defaults, favorites, preferences,
+        film notes, and combo workbooks from this browser. v4 backups include the roll registry;
+        v1–v3 imports remain supported.
       </p>
       <div className="flex flex-wrap gap-3">
         <Button type="button" variant="secondary" onClick={handleExport}>

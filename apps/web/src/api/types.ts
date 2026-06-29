@@ -22,7 +22,24 @@ export interface DatasetStatsResponse {
 /** Browser library backup format */
 export const LIBRARY_EXPORT_VERSION_V1 = 1 as const;
 export const LIBRARY_EXPORT_VERSION_V2 = 2 as const;
-export const LIBRARY_EXPORT_VERSION = 3 as const;
+export const LIBRARY_EXPORT_VERSION_V3 = 3 as const;
+export const LIBRARY_EXPORT_VERSION = 4 as const;
+
+/** One developed roll — metadata only; narrative notes stay in your notebook */
+export interface DevelopedRoll {
+  id: string;
+  code: string;
+  developedAt: string;
+  film: string;
+  developer: string;
+  format: string;
+  iso: string;
+  dilution: string;
+  chartTimeMin: string | null;
+  recipeId: string | null;
+  notebookRef: string;
+  createdAt: string;
+}
 
 export type OutputGoal = "print" | "scan" | "both";
 
@@ -122,6 +139,7 @@ export interface UserLibraryExport {
   filmPreferences: Record<string, FilmPreferencesOverride>;
   filmEnrichment: Record<string, FilmEnrichment>;
   combinationWorkbook: Record<string, CombinationWorkbookEntry>;
+  developedRolls: DevelopedRoll[];
 }
 
 export interface DefaultRecipeEntry {

@@ -78,4 +78,8 @@
   .session-card {
     break-inside: avoid;
   }
+
+  .session-roll-code {
+    break-inside: avoid;
+  }
 }

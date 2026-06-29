@@ -4,6 +4,23 @@ All notable changes to this project are documented here. The format is based on 
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-06-26
+
+Midori-aligned personal workflow: roll codes and a minimal developed-rolls registry — not a digital journal.
+
+### Added
+
+- **Roll code** on session card — suggested `YYMMDD-FILM-DEV` code with copy + print on the session slip
+- **Log roll** — saves a minimal registry entry (date, combo, optional notebook ref, recipe link); increments workbook roll counter
+- **Developed rolls table** on Library — sortable log with links to session and saved recipe
+- **Library backup v4** — includes `developedRolls`; imports v1–v3 still supported
+- **docs/WORKFLOW.md** — notebook + scan filename convention; Pi LAN deploy note
+
+### Changed
+
+- Workbook UI labeled **Combo tweaks** (working time / presoak per combo, not a daily journal)
+- Session card copy emphasizes chart times + volumes; narrative notes stay on paper
+
 ## [0.2.1] - 2026-06-24
 
 Photographer workflow polish: journal fields, style tags, session LLM brief, LAN dev, and bilingual LLM output.
@@ -73,6 +90,7 @@ First portfolio-ready release: end-to-end local-first film development assistant
 - Recipe responses include source attribution and safety disclaimer.
 - No LLM provider keys in the browser UI.
 
+[0.3.0]: https://github.com/DanielFrc/film-developer-agent/releases/tag/v0.3.0
 [0.2.1]: https://github.com/DanielFrc/film-developer-agent/releases/tag/v0.2.1
 [0.2.0]: https://github.com/DanielFrc/film-developer-agent/releases/tag/v0.2.0
 [0.1.0]: https://github.com/DanielFrc/film-developer-agent/releases/tag/v0.1.0

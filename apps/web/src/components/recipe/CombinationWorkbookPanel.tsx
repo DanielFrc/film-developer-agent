@@ -162,7 +162,7 @@ export function CombinationWorkbookPanel({
   }
 
   return (
-    <Card title="Development journal" className={className}>
+    <Card title="Combo tweaks" className={className}>
       <div className="mb-4 space-y-2">
         <Badge tone="warning">Your annotations — not from chart</Badge>
         <p className="text-sm text-muted">

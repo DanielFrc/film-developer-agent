@@ -1,6 +1,7 @@
 import type {
   CombinationWorkbookEntry,
   DefaultRecipeEntry,
+  DevelopedRoll,
   FavoriteEntry,
   FilmEnrichment,
   FilmPreferencesEntry,
@@ -17,6 +18,7 @@ import {
   LIBRARY_EXPORT_VERSION as EXPORT_VERSION,
   LIBRARY_EXPORT_VERSION_V1,
   LIBRARY_EXPORT_VERSION_V2,
+  LIBRARY_EXPORT_VERSION_V3,
 } from "../api/types";
 
 const KEYS = {
@@ -29,6 +31,7 @@ const KEYS = {
   filmPreferences: "film-agent:film-preferences",
   filmEnrichment: "film-agent:film-enrichment",
   combinationWorkbook: "film-agent:combination-workbook",
+  developedRolls: "film-agent:developed-rolls",
 } as const;
 
 const LIMITS = {
@@ -664,6 +667,67 @@ export function buildPreferencesContext(preferences: UserPreferences): string | 
   return parts.length ? parts.join(". ") : undefined;
 }
 
+function normalizeDevelopedRoll(entry: Partial<DevelopedRoll> & Pick<DevelopedRoll, "id">): DevelopedRoll {
+  return {
+    id: entry.id,
+    code: entry.code?.trim() ?? "",
+    developedAt: entry.developedAt ?? new Date().toISOString().slice(0, 10),
+    film: entry.film ?? "",
+    developer: entry.developer ?? "",
+    format: entry.format ?? "",
+    iso: entry.iso ?? "",
+    dilution: entry.dilution?.trim() || "stock",
+    chartTimeMin: entry.chartTimeMin ?? null,
+    recipeId: entry.recipeId ?? null,
+    notebookRef: entry.notebookRef?.trim() ?? "",
+    createdAt: entry.createdAt ?? new Date().toISOString(),
+  };
+}
+
+export function loadDevelopedRolls(): DevelopedRoll[] {
+  return readJson<DevelopedRoll[]>(KEYS.developedRolls, [])
+    .map((entry) => normalizeDevelopedRoll(entry))
+    .sort((a, b) => b.developedAt.localeCompare(a.developedAt) || b.createdAt.localeCompare(a.createdAt));
+}
+
+export function findMatchingRecipeId(
+  film: string,
+  developer: string,
+  format: string,
+): string | null {
+  const match = loadSavedRecipes().find(
+    (recipe) => recipe.film === film && recipe.developer === developer && recipe.format === format,
+  );
+  return match?.id ?? null;
+}
+
+export function logDevelopedRoll(
+  entry: Omit<DevelopedRoll, "id" | "createdAt">,
+  match: {
+    film: string;
+    developer: string;
+    format: string;
+    iso: string;
+    dilution?: string | null;
+  },
+): DevelopedRoll {
+  const roll: DevelopedRoll = normalizeDevelopedRoll({
+    ...entry,
+    id: crypto.randomUUID(),
+    createdAt: new Date().toISOString(),
+    recipeId: entry.recipeId ?? findMatchingRecipeId(entry.film, entry.developer, entry.format),
+  });
+  writeJson(KEYS.developedRolls, [roll, ...loadDevelopedRolls()]);
+  incrementWorkbookRolls(match);
+  return roll;
+}
+
+export function removeDevelopedRoll(id: string): DevelopedRoll[] {
+  const next = loadDevelopedRolls().filter((roll) => roll.id !== id);
+  writeJson(KEYS.developedRolls, next);
+  return next;
+}
+
 export function buildUserLibraryExport(): UserLibraryExport {
   return {
     version: EXPORT_VERSION,
@@ -677,6 +741,7 @@ export function buildUserLibraryExport(): UserLibraryExport {
     filmPreferences: loadFilmPreferenceOverrides(),
     filmEnrichment: loadFilmEnrichmentMap(),
     combinationWorkbook: loadCombinationWorkbookMap(),
+    developedRolls: loadDevelopedRolls(),
   };
 }
 
@@ -686,8 +751,13 @@ function isLibraryExportRecord(value: unknown): value is Record<string, unknown>
 
 function normalizeLibraryImport(record: Record<string, unknown>): UserLibraryExport {
   const version = record.version;
-  if (version !== EXPORT_VERSION && version !== LIBRARY_EXPORT_VERSION_V2 && version !== LIBRARY_EXPORT_VERSION_V1) {
-    throw new Error("Invalid library backup file (expected version 1, 2, or 3).");
+  if (
+    version !== EXPORT_VERSION &&
+    version !== LIBRARY_EXPORT_VERSION_V3 &&
+    version !== LIBRARY_EXPORT_VERSION_V2 &&
+    version !== LIBRARY_EXPORT_VERSION_V1
+  ) {
+    throw new Error("Invalid library backup file (expected version 1, 2, 3, or 4).");
   }
   if (typeof record.exportedAt !== "string") {
     throw new Error("Invalid library backup file (missing exportedAt).");
@@ -711,6 +781,9 @@ function normalizeLibraryImport(record: Record<string, unknown>): UserLibraryExp
         (record.combinationWorkbook as Record<string, CombinationWorkbookEntry>) ?? {},
       ).map(([key, entry]) => [key, normalizeWorkbookEntry(entry)]),
     ),
+    developedRolls: ((record.developedRolls as DevelopedRoll[]) ?? []).map((entry) =>
+      normalizeDevelopedRoll(entry),
+    ),
   };
 }
 
@@ -730,6 +803,7 @@ export function importUserLibrary(payload: unknown): UserLibraryExport {
   writeJson(KEYS.filmPreferences, normalized.filmPreferences);
   writeJson(KEYS.filmEnrichment, normalized.filmEnrichment);
   writeJson(KEYS.combinationWorkbook, normalized.combinationWorkbook);
+  writeJson(KEYS.developedRolls, normalized.developedRolls);
 
   return normalized;
 }
