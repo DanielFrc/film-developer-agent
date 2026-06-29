@@ -1,3 +1,4 @@
+import { useState } from "react";
 import ReactMarkdown from "react-markdown";
 import type { LlmLanguage, SessionCard } from "../../api/types";
 import { DATA_SOURCE_URL } from "../../lib/constants";
@@ -6,9 +7,18 @@ import { LLM_LANGUAGES } from "../../lib/llmLanguages";
 import { Badge } from "../ui/Badge";
 import { Button } from "../ui/Button";
 import { Card } from "../ui/Card";
+import { FormField, inputClassName } from "../ui/FormField";
 
 interface SessionCardPanelProps {
   card: SessionCard;
+  rollCode?: string;
+  onRollCodeChange?: (value: string) => void;
+  developedAt?: string;
+  onDevelopedAtChange?: (value: string) => void;
+  notebookRef?: string;
+  onNotebookRefChange?: (value: string) => void;
+  onLogRoll?: () => void;
+  rollLogged?: boolean;
   onSaveSession?: () => void;
   onGenerateRecipe?: () => void;
   onGenerateSummary?: () => void;
@@ -54,6 +64,14 @@ function sourceLabel(source: SessionCard["presoakSource"]): string {
 
 export function SessionCardPanel({
   card,
+  rollCode = "",
+  onRollCodeChange,
+  developedAt = "",
+  onDevelopedAtChange,
+  notebookRef = "",
+  onNotebookRefChange,
+  onLogRoll,
+  rollLogged = false,
   onSaveSession,
   onGenerateRecipe,
   onGenerateSummary,
@@ -67,8 +85,21 @@ export function SessionCardPanel({
   summaryLoading = false,
   className = "",
 }: SessionCardPanelProps) {
+  const [copyMessage, setCopyMessage] = useState<string | null>(null);
+
   function handlePrint() {
     window.print();
+  }
+
+  async function handleCopyCode() {
+    if (!rollCode.trim()) return;
+    try {
+      await navigator.clipboard.writeText(rollCode.trim());
+      setCopyMessage("Copied");
+      window.setTimeout(() => setCopyMessage(null), 2000);
+    } catch {
+      setCopyMessage("Copy failed");
+    }
   }
 
   const summaryLanguageLabel =
@@ -92,7 +123,61 @@ export function SessionCardPanel({
         <p className="text-sm text-muted">
           {card.film} · {card.developer} · {card.format} · ISO {card.iso} · {card.dilution}
         </p>
+        {rollCode ? (
+          <p className="mt-2 font-mono text-base font-semibold text-ink">Roll code: {rollCode}</p>
+        ) : null}
       </header>
+
+      {onLogRoll ? (
+        <section className="session-roll-code mb-5 rounded-lg border border-border bg-surface-elevated/60 px-4 py-4 print:border-border print:bg-transparent">
+          <div className="mb-3 flex flex-wrap items-center gap-2">
+            <h3 className="text-xs font-semibold uppercase tracking-wide text-muted">Roll code</h3>
+            <Badge tone="accent">Notebook + scans</Badge>
+          </div>
+          <p className="mb-3 text-sm text-muted print:hidden">
+            Copy this code into your Midori notebook and use it when you export scans (e.g.{" "}
+            <span className="font-mono text-ink">{rollCode || "CODE"}_001.tif</span>).
+          </p>
+          <div className="grid gap-3 sm:grid-cols-2 print:hidden">
+            <FormField label="Code" htmlFor="roll-code">
+              <input
+                id="roll-code"
+                className={inputClassName}
+                value={rollCode}
+                onChange={(event) => onRollCodeChange?.(event.target.value)}
+              />
+            </FormField>
+            <FormField label="Developed on" htmlFor="developed-at">
+              <input
+                id="developed-at"
+                type="date"
+                className={inputClassName}
+                value={developedAt}
+                onChange={(event) => onDevelopedAtChange?.(event.target.value)}
+              />
+            </FormField>
+            <FormField label="Notebook ref (optional)" htmlFor="notebook-ref" className="sm:col-span-2">
+              <input
+                id="notebook-ref"
+                className={inputClassName}
+                placeholder="Midori p. 42"
+                value={notebookRef}
+                onChange={(event) => onNotebookRefChange?.(event.target.value)}
+              />
+            </FormField>
+          </div>
+          <div className="mt-3 flex flex-wrap items-center gap-3 print:hidden">
+            <Button type="button" variant="secondary" onClick={handleCopyCode}>
+              Copy code
+            </Button>
+            <Button type="button" onClick={onLogRoll}>
+              Log roll
+            </Button>
+            {copyMessage ? <span className="text-sm text-muted">{copyMessage}</span> : null}
+            {rollLogged ? <span className="text-sm text-success">Logged to library</span> : null}
+          </div>
+        </section>
+      ) : null}
 
       <dl className="grid gap-4 sm:grid-cols-2">
         <div>
@@ -142,7 +227,7 @@ export function SessionCardPanel({
       card.outcomeNotes ? (
         <section className="mt-5 rounded-lg border border-border bg-surface-elevated/60 px-4 py-3">
           <div className="mb-2 flex flex-wrap items-center gap-2">
-            <h3 className="text-xs font-semibold uppercase tracking-wide text-muted">Development journal</h3>
+            <h3 className="text-xs font-semibold uppercase tracking-wide text-muted">Combo notes</h3>
             <Badge tone="warning">Your notes</Badge>
           </div>
           {card.outcomeDensity ||
@@ -270,7 +355,7 @@ export function SessionCardPanel({
         ) : null}
         {onEditWorkbook ? (
           <Button type="button" variant="secondary" onClick={onEditWorkbook}>
-            Edit workbook notes
+            Edit combo tweaks
           </Button>
         ) : null}
         <Button type="button" variant="secondary" onClick={handlePrint}>

@@ -226,6 +226,10 @@ docker compose run --rm etl
 docker compose --profile prod up --build api web-prod
 ```
 
+Open `http://<host-ip>:8080` from other devices on your LAN. Add that origin to `CORS_ORIGINS` in `.env`. For a Raspberry Pi homelab, this is the recommended layout; personal library stays in each browser until shared storage is added.
+
+**Notebook + roll codes:** [WORKFLOW.md](WORKFLOW.md)
+
 ---
 
 ## Troubleshooting
@@ -260,6 +264,7 @@ python scripts/export_openapi.py   # after API schema changes
 |-----|---------|
 | [README.md](../README.md) | Project overview |
 | [PORTFOLIO.md](PORTFOLIO.md) | Demo script & interview guide |
+| [WORKFLOW.md](WORKFLOW.md) | Notebook + roll codes + scan filenames |
 | [ARCHITECTURE.md](ARCHITECTURE.md) | Pipeline and data model |
 | [ROADMAP.md](ROADMAP.md) | Phased plan |
 | [PHASE5_2.md](PHASE5_2.md) | Personal library & preferences |

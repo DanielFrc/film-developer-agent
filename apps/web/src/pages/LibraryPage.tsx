@@ -7,6 +7,7 @@ import { RecentQueries } from "../components/dashboard/RecentQueries";
 import { SavedCombinations } from "../components/dashboard/SavedCombinations";
 import { SavedRecipes } from "../components/dashboard/SavedRecipes";
 import { FavoritesPanel } from "../components/dashboard/FavoritesPanel";
+import { DevelopedRollsTable } from "../components/library/DevelopedRollsTable";
 import { FilmEnrichmentSection } from "../components/library/FilmEnrichmentSection";
 import { Button } from "../components/ui/Button";
 import { Card } from "../components/ui/Card";
@@ -23,7 +24,7 @@ export function LibraryPage() {
     <div>
       <PageHeader
         title="Library"
-        description="Saved combinations, recipes, favorites, and recent searches — stored in this browser only."
+        description="Saved sessions, roll registry, recipes, and favorites — stored in this browser until you export a backup."
         action={
           <div className="flex gap-2">
             <Link to="/preferences">
@@ -59,6 +60,14 @@ export function LibraryPage() {
             Open preferences & backup
           </Link>
         </Card>
+      </div>
+
+      <div className="mt-6">
+        <DevelopedRollsTable
+          rolls={library.developedRolls}
+          recipes={library.recipes}
+          onDelete={library.deleteDevelopedRoll}
+        />
       </div>
 
       <div className="mt-6">

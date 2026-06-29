@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
 import type { DevelopingTimeItem, SessionNavigationState, ScrapedFormat } from "../api/types";
 import { filmApi } from "../api/client";
@@ -10,10 +10,12 @@ import { useRecipeNavigation } from "../hooks/useRecipeNavigation";
 import { useUserLibrary } from "../hooks/useUserLibrary";
 import { buildLookupResultView } from "../lib/lookup";
 import { formatApiError, type ApiErrorView } from "../lib/apiErrors";
+import { suggestRollCode } from "../lib/rollCode";
 import { buildSessionCard, buildSessionSummaryRequest, matchFromSavedCombination } from "../lib/sessionCard";
 import { DEFAULT_SEARCH_FORM } from "../api/types";
 import {
   buildWorkbookContext,
+  findMatchingRecipeId,
   getCombinationWorkbook,
   getEffectivePreferences,
   incrementWorkbookRolls,
@@ -28,18 +30,26 @@ function resolveMatch(state: SessionNavigationState | null): DevelopingTimeItem 
   return null;
 }
 
+function todayIsoDate(): string {
+  return new Date().toISOString().slice(0, 10);
+}
+
 export function SessionPage() {
   const location = useLocation();
   const navigate = useNavigate();
   const navState = location.state as SessionNavigationState | null;
   const match = resolveMatch(navState);
-  const { addCombination } = useUserLibrary();
+  const { addCombination, addDevelopedRoll } = useUserLibrary();
   const navigateToRecipe = useRecipeNavigation();
   const [workbookRevision, setWorkbookRevision] = useState(0);
   const [sessionSaved, setSessionSaved] = useState(false);
   const [showWorkbook, setShowWorkbook] = useState(false);
   const [summaryLoading, setSummaryLoading] = useState(false);
   const [summaryError, setSummaryError] = useState<ApiErrorView | null>(null);
+  const [developedAt, setDevelopedAt] = useState(todayIsoDate);
+  const [rollCode, setRollCode] = useState("");
+  const [notebookRef, setNotebookRef] = useState("");
+  const [rollLogged, setRollLogged] = useState(false);
 
   const workbook = useMemo(() => {
     if (!match) return null;
@@ -64,6 +74,19 @@ export function SessionPage() {
   const executiveSummary = workbook?.executiveSummary.trim() || null;
   const executiveSummaryStale = isExecutiveSummaryStale(workbook);
 
+  useEffect(() => {
+    if (!match) return;
+    setRollLogged(false);
+    const date = developedAt ? new Date(`${developedAt}T12:00:00`) : new Date();
+    setRollCode(
+      suggestRollCode({
+        film: match.film,
+        developer: match.developer,
+        developedAt: Number.isNaN(date.getTime()) ? new Date() : date,
+      }),
+    );
+  }, [match, developedAt]);
+
   if (!match || !card) {
     return <Navigate to="/search" replace />;
   }
@@ -83,6 +106,29 @@ export function SessionPage() {
   function handleRecordRoll() {
     incrementWorkbookRolls(match!);
     setWorkbookRevision((value) => value + 1);
+  }
+
+  function handleLogRoll() {
+    const code = rollCode.trim();
+    if (!code) return;
+
+    addDevelopedRoll(
+      {
+        code,
+        developedAt,
+        film: match!.film,
+        developer: match!.developer,
+        format: match!.format,
+        iso: match!.iso,
+        dilution: match!.dilution?.trim() || "stock",
+        chartTimeMin: card!.chartTimeMin,
+        recipeId: findMatchingRecipeId(match!.film, match!.developer, match!.format),
+        notebookRef,
+      },
+      match!,
+    );
+    setWorkbookRevision((value) => value + 1);
+    setRollLogged(true);
   }
 
   function handleGenerateRecipe() {
@@ -122,7 +168,7 @@ export function SessionPage() {
     <div className="print:text-black">
       <PageHeader
         title="Session card"
-        description="Sink-ready checklist from chart data and your preferences. Optional LLM executive summary from your journal — no full recipe required."
+        description="Chart times and tank volumes for the sink. Copy a roll code to your notebook — detailed notes stay on paper."
         className="print:hidden"
         action={
           <button
@@ -137,6 +183,14 @@ export function SessionPage() {
 
       <SessionCardPanel
         card={card}
+        rollCode={rollCode}
+        onRollCodeChange={setRollCode}
+        developedAt={developedAt}
+        onDevelopedAtChange={setDevelopedAt}
+        notebookRef={notebookRef}
+        onNotebookRefChange={setNotebookRef}
+        onLogRoll={handleLogRoll}
+        rollLogged={rollLogged}
         onSaveSession={handleSaveSession}
         onGenerateRecipe={handleGenerateRecipe}
         onGenerateSummary={handleGenerateSummary}
@@ -176,7 +230,11 @@ export function SessionPage() {
         <Link to="/preferences" className="text-accent underline">
           Preferences
         </Link>
-        .
+        . See{" "}
+        <Link to="/library" className="text-accent underline">
+          Developed rolls
+        </Link>{" "}
+        in Library lists logged rolls.
       </p>
     </div>
   );

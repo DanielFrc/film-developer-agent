@@ -8,7 +8,7 @@ Local-first **medallion ETL pipeline** and **LLM-assisted darkroom assistant**: 
 
 > **Portfolio / learning project** — demonstrates batch ingestion, star-schema modeling, serverless-ready API boundaries, and RAG-style LLM prompts. Not affiliated with Digitaltruth Photo Ltd. See [docs/LEGAL.md](docs/LEGAL.md).
 
-**Quick start:** [docs/QUICKSTART.md](docs/QUICKSTART.md) · **Interview demo:** [docs/PORTFOLIO.md](docs/PORTFOLIO.md) · **Gold contract:** [docs/DATA_CONTRACT.md](docs/DATA_CONTRACT.md)
+**Quick start:** [docs/QUICKSTART.md](docs/QUICKSTART.md) · **Notebook workflow:** [docs/WORKFLOW.md](docs/WORKFLOW.md) · **Interview demo:** [docs/PORTFOLIO.md](docs/PORTFOLIO.md) · **Gold contract:** [docs/DATA_CONTRACT.md](docs/DATA_CONTRACT.md)
 
 ---
 
@@ -25,10 +25,11 @@ Local-first **medallion ETL pipeline** and **LLM-assisted darkroom assistant**: 
 
 ### Darkroom users (self-hosted)
 
-- Look up developing times, **session cards** (sink checklist), and optional LLM recipes
+- Look up developing times, **session cards** (sink checklist: times + volumes), and optional LLM recipes
+- **Roll codes** — copy to your notebook; log a minimal registry row after developing
 - Compare developers for the same film / format / ISO
-- Save sessions, workbook notes, and preferences in the browser (export/import JSON)
-- Dashboard shows dataset freshness after you run the CLI pipeline locally
+- Save sessions, combo tweaks, and preferences in the browser (export/import JSON v4)
+- **Physical notebook** stays primary for narrative notes — see [docs/WORKFLOW.md](docs/WORKFLOW.md)
 
 **Start here:** [docs/QUICKSTART.md](docs/QUICKSTART.md) Path 2 or 3 — gold data required once via CLI
 
@@ -72,7 +73,7 @@ flowchart LR
 - **Recipes** — optional LLM 12-section markdown; base developing time never invented by the model
 - **Cache** — repeat identical lookups skip the LLM (`cached: true`)
 - **Explorer** — browse bronze/silver/gold; film/developer catalog views
-- **Personal library** — saved sessions, recipes, workbook log (rolls + outcomes), film notes, defaults, favorites (browser `localStorage`, export v3)
+- **Personal library** — saved sessions, developed roll registry, recipes, combo workbook, film notes, defaults, favorites (browser `localStorage`, export v4)
 
 ---
 
