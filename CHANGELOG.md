@@ -2,7 +2,11 @@
 
 All notable changes to this project are documented here. The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-## [Unreleased]
+## [0.3.1]
+
+### Fixed
+
+- **LAN HTTP on Pi** — `randomId()` fallback when `crypto.randomUUID` is unavailable (non-secure `http://192.168.x.x` contexts)
 
 ## [0.3.0] - 2026-06-26
 
