@@ -14,6 +14,7 @@ import type {
 } from "../api/types";
 import { parsePreferredDevelopers } from "./preferences";
 import { normalizeLlmLanguage } from "./llmLanguages";
+import { randomId } from "./randomId";
 import {
   LIBRARY_EXPORT_VERSION as EXPORT_VERSION,
   LIBRARY_EXPORT_VERSION_V1,
@@ -427,7 +428,7 @@ export function saveCombination(
 ): SavedCombination[] {
   const item: SavedCombination = {
     ...entry,
-    id: crypto.randomUUID(),
+    id: randomId(),
     savedAt: new Date().toISOString(),
   };
   const next = [
@@ -462,7 +463,7 @@ export function saveRecipeMarkdown(
 ): SavedRecipe[] {
   const item: SavedRecipe = {
     ...entry,
-    id: crypto.randomUUID(),
+    id: randomId(),
     savedAt: new Date().toISOString(),
   };
   const next = [item, ...loadSavedRecipes()].slice(0, LIMITS.savedRecipes);
@@ -713,7 +714,7 @@ export function logDevelopedRoll(
 ): DevelopedRoll {
   const roll: DevelopedRoll = normalizeDevelopedRoll({
     ...entry,
-    id: crypto.randomUUID(),
+    id: randomId(),
     createdAt: new Date().toISOString(),
     recipeId: entry.recipeId ?? findMatchingRecipeId(entry.film, entry.developer, entry.format),
   });

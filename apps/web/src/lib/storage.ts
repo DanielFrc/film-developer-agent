@@ -1,5 +1,6 @@
 import type { RecentQuery } from "../api/types";
 import { RECENT_QUERIES_KEY, RECENT_QUERIES_LIMIT } from "./constants";
+import { randomId } from "./randomId";
 
 export function loadRecentQueries(): RecentQuery[] {
   try {
@@ -15,7 +16,7 @@ export function loadRecentQueries(): RecentQuery[] {
 export function saveRecentQuery(entry: Omit<RecentQuery, "id" | "queriedAt">): RecentQuery[] {
   const item: RecentQuery = {
     ...entry,
-    id: crypto.randomUUID(),
+    id: randomId(),
     queriedAt: new Date().toISOString(),
   };
   const next = [item, ...loadRecentQueries().filter((q) => !isSameQuery(q, entry))].slice(
